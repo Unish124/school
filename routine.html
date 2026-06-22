@@ -1,0 +1,717 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class 12 'C' — Weekly Routine | Devi Secondary School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-deep:#F2EBDC;
+    --ink:#23201A;
+    --ink-soft:#5B5547;
+    --rule:#D9CFB8;
+    --rule-strong:#B8AC8C;
+    --green:#2F6F4E;
+    --green-soft:#E7F0E9;
+    --amber:#B9701F;
+    --amber-soft:#FAEEDC;
+    --red:#A6443A;
+    --red-soft:#F5E6E2;
+    --card:#FFFFFF;
+    --shadow: 0 1px 0 rgba(35,32,26,0.04), 0 8px 24px -12px rgba(35,32,26,0.18);
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 10% -10%, rgba(47,111,78,0.06), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(185,112,31,0.06), transparent),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    min-height:100vh;
+    line-height:1.45;
+  }
+
+  /* faint paper grain via repeating lines */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image: repeating-linear-gradient(0deg, rgba(35,32,26,0.012) 0px, rgba(35,32,26,0.012) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:980px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+
+  /* ---------- HEADER / LETTERHEAD ---------- */
+  header{
+    text-align:center;
+    padding:6px 0 26px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:28px;
+    position:relative;
+  }
+  .stamp{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--green);
+    background:var(--green-soft);
+    border:1px solid rgba(47,111,78,0.25);
+    padding:5px 12px;
+    border-radius:100px;
+    margin-bottom:16px;
+  }
+  .stamp::before{
+    content:"";
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 0 3px rgba(47,111,78,0.18);
+  }
+  h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:clamp(28px, 5vw, 42px);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--green);
+  }
+  .school-name{
+    font-family:'Source Serif 4', serif;
+    font-size:14px;
+    color:var(--ink-soft);
+    letter-spacing:0.02em;
+    margin:0 0 2px;
+  }
+  .meta-row{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:0.02em;
+  }
+  .meta-row span{ display:inline-flex; align-items:center; gap:6px; }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- DAY TABS ---------- */
+  .tabs{
+    display:flex;
+    gap:6px;
+    background:var(--paper-deep);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:6px;
+    margin-bottom:22px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex:1 1 0;
+    min-width:0;
+    text-align:center;
+    padding:11px 4px;
+    border-radius:10px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border:none;
+    background:transparent;
+    transition:background .18s ease, color .18s ease, transform .15s ease;
+    white-space:nowrap;
+    position:relative;
+  }
+  .tab .full{ display:inline; }
+  .tab .short{ display:none; }
+  .tab:hover{ background:rgba(35,32,26,0.05); color:var(--ink); }
+  .tab.active{
+    background:var(--ink);
+    color:var(--paper);
+    box-shadow:var(--shadow);
+  }
+  .tab .today-dot{
+    display:none;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:var(--green);
+    position:absolute;
+    top:7px; right:10px;
+  }
+  .tab.is-today .today-dot{ display:block; }
+  .tab.is-today:not(.active){ color:var(--green); }
+
+  /* ---------- DAY HEADING ---------- */
+  .day-heading{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin:4px 4px 14px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .day-heading h2{
+    font-family:'Source Serif 4', serif;
+    font-size:22px;
+    margin:0;
+    font-weight:600;
+  }
+  .day-heading .count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--paper-deep);
+    border:1px solid var(--rule);
+    padding:4px 10px;
+    border-radius:100px;
+  }
+
+  /* ---------- PERIOD LIST (mobile-first card rows) ---------- */
+  .periods{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .period-row{
+    display:grid;
+    grid-template-columns:64px 1fr auto;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:14px 16px;
+    box-shadow:var(--shadow);
+    position:relative;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .period-row.is-now{
+    position:relative;
+    border:1px solid rgba(47,111,78,0.35);
+    border-radius:14px;
+    background:var(--card);
+    transform:scale(1.015);
+    animation: breatheGlow 3.2s ease-in-out infinite;
+  }
+  .period-row.is-now .p-subject{
+    color:var(--green);
+  }
+  
+  @keyframes breatheGlow{
+    0%, 100%{
+      box-shadow:
+        0 0 0 1px rgba(47,111,78,0.12),
+        0 0 16px 2px rgba(47,111,78,0.20),
+        0 0 36px 6px rgba(47,111,78,0.14),
+        0 6px 20px -8px rgba(47,111,78,0.30);
+    }
+    50%{
+      box-shadow:
+        0 0 0 1px rgba(47,111,78,0.22),
+        0 0 26px 6px rgba(47,111,78,0.38),
+        0 0 56px 14px rgba(47,111,78,0.22),
+        0 10px 28px -8px rgba(47,111,78,0.40);
+    }
+  }
+  .period-row.is-now::before{
+    content:"● LIVE NOW";
+    position:absolute;
+    top:-10px; left:14px;
+    background:var(--green);
+    color:#fff;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    padding:3px 9px;
+    border-radius:100px;
+    box-shadow:0 2px 8px rgba(47,111,78,0.4);
+    z-index:3;
+  }
+  .period-row.is-off{
+    background:var(--red-soft);
+    border-color:rgba(166,68,58,0.25);
+  }
+  .period-row.is-practical{
+    background:var(--amber-soft);
+    border-color:rgba(185,112,31,0.28);
+  }
+
+  .p-num{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--ink-soft);
+    font-size:11px;
+    text-align:left;
+  }
+  .p-num .ord{
+    display:block;
+    font-size:18px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.1;
+  }
+  .p-num .lbl{
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    font-size:9.5px;
+  }
+
+  .p-main{ min-width:0; }
+  .p-subject{
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size:16.5px;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .p-subject .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    font-weight:600;
+    padding:2px 7px;
+    border-radius:5px;
+    background:rgba(185,112,31,0.16);
+    color:var(--amber);
+  }
+  .p-subject .tag.off{
+    background:rgba(166,68,58,0.14);
+    color:var(--red);
+  }
+  .p-teacher{
+    margin-top:3px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .p-teacher b{ color:var(--ink-soft); font-weight:600; }
+
+  .p-time{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  /* ---------- LEGEND ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin:26px 4px 0;
+    padding-top:18px;
+    border-top:1px dashed var(--rule-strong);
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{
+    width:10px; height:10px;
+    border-radius:3px;
+    display:inline-block;
+  }
+  .legend i.dot-green{ background:var(--green); }
+  .legend i.dot-amber{ background:var(--amber); }
+  .legend i.dot-red{ background:var(--red); }
+
+  footer{
+    text-align:center;
+    margin-top:40px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- DESKTOP: full-week grid toggle ---------- */
+  .view-toggle{
+    display:flex;
+    justify-content:flex-end;
+    margin-bottom:14px;
+  }
+  .view-toggle button{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--rule-strong);
+    color:var(--ink-soft);
+    padding:7px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .view-toggle button:hover{ background:var(--paper-deep); color:var(--ink); }
+
+  .week-grid{ display:none; }
+  .week-grid.show{ display:block; }
+  .week-table-scroll{ overflow-x:auto; border-radius:14px; border:1px solid var(--rule); box-shadow:var(--shadow); }
+  table.week{
+    border-collapse:collapse;
+    width:100%;
+    min-width:760px;
+    background:var(--card);
+    font-size:12.5px;
+  }
+  table.week th, table.week td{
+    border:1px solid var(--rule);
+    padding:9px 8px;
+    text-align:center;
+    vertical-align:middle;
+  }
+  table.week thead th{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:10px 8px;
+  }
+  table.week tbody th{
+    background:var(--paper-deep);
+    font-family:'Source Serif 4', serif;
+    font-weight:600;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  table.week td .wk-subj{ font-weight:700; display:block; }
+  table.week td .wk-teach{ color:var(--ink-soft); font-size:11px; display:block; margin-top:1px; }
+  table.week td.off{ background:var(--red-soft); color:var(--red); font-style:italic; }
+  table.week td.practical{ background:var(--amber-soft); }
+  table.week tr.today-row th{ color:var(--green); }
+
+  body.list-mode .week-grid{ display:none !important; }
+  body.grid-mode .day-view{ display:none !important; }
+
+  @media (min-width: 760px){
+    .tab .full{ display:inline; }
+    .tab .short{ display:none; }
+  }
+  @media (max-width: 560px){
+    .tab .full{ display:none; }
+    .tab .short{ display:inline; }
+  }
+  @media (max-width: 480px){
+    .period-row{ grid-template-columns:50px 1fr; }
+    .p-time{ grid-column:1 / -1; text-align:left; margin-top:2px; padding-left:62px; }
+  }
+</style>
+</head>
+<body class="list-mode">
+<div class="wrap">
+
+  <header>
+    <p class="school-name">Daily Routine of Class XII (Science) — Effective from 8th Ashad 2083</p>
+    <h1>Class 12 <em>'C'</em> Routine</h1>
+  </header>
+
+  <div class="view-toggle">
+    <button id="toggleViewBtn" type="button">View full week</button>
+  </div>
+
+  <!-- ===================== DAY-BY-DAY VIEW ===================== -->
+  <div class="day-view">
+    <nav class="tabs" id="tabs"></nav>
+
+    <div class="day-heading">
+      <h2 id="dayTitle">Monday</h2>
+      <span class="count" id="dayCount">8 periods</span>
+    </div>
+
+    <div class="periods" id="periods"></div>
+
+    <div class="legend">
+      <span><i class="dot-green"></i> Happening now</span>
+      <span><i class="dot-amber"></i> Practical / Lab</span>
+      <span><i class="dot-red"></i> Off period</span>
+    </div>
+  </div>
+
+  <!-- ===================== FULL WEEK GRID VIEW ===================== -->
+  <div class="week-grid" id="weekGrid">
+    <div class="week-table-scroll">
+      <table class="week" id="weekTable">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>1st<br><span style="font-weight:400;opacity:.75">6:20–7:00</span></th>
+            <th>2nd<br><span style="font-weight:400;opacity:.75">7:00–7:40</span></th>
+            <th>3rd<br><span style="font-weight:400;opacity:.75">7:40–8:20</span></th>
+            <th>4th<br><span style="font-weight:400;opacity:.75">8:40–9:20</span></th>
+            <th>5th<br><span style="font-weight:400;opacity:.75">9:20–10:00</span></th>
+            <th>6th<br><span style="font-weight:400;opacity:.75">10:00–10:40</span></th>
+            <th>7th<br><span style="font-weight:400;opacity:.75">10:40–11:20</span></th>
+            <th>8th<br><span style="font-weight:400;opacity:.75">11:20–12:00</span></th>
+          </tr>
+        </thead>
+        <tbody id="weekBody"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><i class="dot-amber"></i> Practical / Lab</span>
+      <span><i class="dot-red"></i> Off period</span>
+    </div>
+  </div>
+
+  <footer>Devi Secondary School, Birtamod-5, Jhapa &middot; Class 12 &lsquo;C&rsquo; Routine &middot; Built for quick reference</footer>
+</div>
+
+<script>
+  // ---------- DATA ----------
+  // Each day: array of 8 periods. null = Off/Holiday.
+  // type: "class" | "practical" | "off"
+  const TIMES = [
+    ["6:20", "7:00"],
+    ["7:00", "7:40"],
+    ["7:40", "8:20"],
+    ["8:40", "9:20"],
+    ["9:20", "10:00"],
+    ["10:00", "10:40"],
+    ["10:40", "11:20"],
+    ["11:20", "12:00"],
+  ];
+
+  const SUBJECT_NAMES = {
+    ENG: "English",
+    PHY: "Physics",
+    MATH: "Mathematics",
+    CHE: "Chemistry",
+    COM: "Computer Science",
+    NEP: "Nepali",
+    BIO: "Biology",
+  };
+
+  const ROUTINE = {
+    Monday: [
+      { subject: "ENG", teacher: "RPD", type: "class" },
+      { subject: "PHY", teacher: "SK", type: "class" },
+      { subject: "MATH", teacher: "SL", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
+      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "PHY", teacher: "TNK", type: "class" },
+      null,
+      null,
+    ],
+    Tuesday: [
+      { subject: "MATH", teacher: "SL", type: "class" },
+      { subject: "CHE", teacher: "BN", type: "class" },
+      { subject: "COM", teacher: "CNS", type: "class" },
+      { subject: "PHY", teacher: "TNK", type: "class" },
+      { subject: "NEP", teacher: "LILA", type: "class" },
+      { subject: "PHY", teacher: "DA", type: "class" },
+      { subject: "ENG", teacher: "JS", type: "class" },
+      null,
+    ],
+    Wednesday: [
+      { subject: "NEP", teacher: "YD", type: "class" },
+      { subject: "CHE", teacher: "BN", type: "class" },
+      { subject: "MATH", teacher: "SL", type: "class" },
+      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
+      { subject: "ENG", teacher: "JS", type: "class" },
+      null,
+      null,
+    ],
+    Thursday: [
+      { subject: "NEP", teacher: "YD", type: "class" },
+      { subject: "MATH", teacher: "SL", type: "class" },
+      { subject: "PHY", teacher: "DA", type: "class" },
+      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
+      { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
+      null,
+    ],
+    Friday: [
+      { subject: "PHY-CHE Practical", teacher: "SK, AT", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "SK, AT", type: "practical" },
+      { subject: "MATH", teacher: "SL", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
+      { subject: "PHY", teacher: "DA", type: "class" },
+      { subject: "ENG", teacher: "PP", type: "class" },
+      { subject: "CHE", teacher: "BN", type: "class" },
+      null,
+    ],
+  };
+
+  const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const DAY_SHORT = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri" };
+
+  // JS getDay(): 0=Sun,1=Mon,...6=Sat
+  const JS_DAY_TO_KEY = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday" };
+
+  function fullSubjectLabel(code) {
+    return SUBJECT_NAMES[code] || code;
+  }
+
+  function parseTimeToMinutes(t) {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  }
+
+  function getCurrentPeriodIndex(dayKey) {
+    const now = new Date();
+    const todayKey = JS_DAY_TO_KEY[now.getDay()];
+    if (todayKey !== dayKey) return -1;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    for (let i = 0; i < TIMES.length; i++) {
+      const start = parseTimeToMinutes(TIMES[i][0]);
+      const end = parseTimeToMinutes(TIMES[i][1]);
+      if (nowMin >= start && nowMin < end) return i;
+    }
+    return -1;
+  }
+
+  function todayKey() {
+    const now = new Date();
+    return JS_DAY_TO_KEY[now.getDay()] || null;
+  }
+
+  // ---------- RENDER: TABS ----------
+  const tabsEl = document.getElementById("tabs");
+  let activeDay = todayKey() || "Monday";
+
+  function renderTabs() {
+    tabsEl.innerHTML = "";
+    const tk = todayKey();
+    DAY_KEYS.forEach(day => {
+      const btn = document.createElement("button");
+      btn.className = "tab" + (day === activeDay ? " active" : "") + (day === tk ? " is-today" : "");
+      btn.innerHTML = `<span class="full">${day}</span><span class="short">${DAY_SHORT[day]}</span><span class="today-dot"></span>`;
+      btn.addEventListener("click", () => { activeDay = day; renderAll(); });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  // ---------- RENDER: PERIOD LIST ----------
+  const periodsEl = document.getElementById("periods");
+  const dayTitleEl = document.getElementById("dayTitle");
+  const dayCountEl = document.getElementById("dayCount");
+
+  function renderPeriods() {
+    dayTitleEl.textContent = activeDay;
+    const periods = ROUTINE[activeDay];
+    const activeCount = periods.filter(p => p !== null).length;
+    dayCountEl.textContent = `${activeCount} period${activeCount === 1 ? "" : "s"}`;
+
+    const nowIdx = getCurrentPeriodIndex(activeDay);
+
+    periodsEl.innerHTML = "";
+    periods.forEach((p, i) => {
+      const row = document.createElement("div");
+      const ordLabel = ["1st","2nd","3rd","4th","5th","6th","7th","8th"][i];
+      const [start, end] = TIMES[i];
+
+      let rowClasses = "period-row";
+      if (i === nowIdx && p !== null) rowClasses += " is-now";
+      if (p === null) rowClasses += " is-off";
+      else if (p.type === "practical") rowClasses += " is-practical";
+      row.className = rowClasses;
+
+      if (p === null) {
+        row.innerHTML = `
+          <div class="p-num"><span class="ord">${ordLabel}</span><span class="lbl">Period</span></div>
+          <div class="p-main">
+            <div class="p-subject">Off <span class="tag off">Holiday</span></div>
+            <div class="p-teacher">No class scheduled</div>
+          </div>
+          <div class="p-time">${start} – ${end}</div>
+        `;
+      } else {
+        const tag = p.type === "practical" ? `<span class="tag">Practical</span>` : "";
+        const isPractical = p.subject.includes("Practical");
+        const displaySubject = isPractical ? p.subject : fullSubjectLabel(p.subject);
+        row.innerHTML = `
+          <div class="p-num"><span class="ord">${ordLabel}</span><span class="lbl">Period</span></div>
+          <div class="p-main">
+            <div class="p-subject">${displaySubject} ${tag}</div>
+            <div class="p-teacher"><b>Teacher:</b> ${p.teacher}</div>
+          </div>
+          <div class="p-time">${start} – ${end}</div>
+        `;
+      }
+      periodsEl.appendChild(row);
+    });
+  }
+
+  // ---------- RENDER: FULL WEEK TABLE ----------
+  const weekBodyEl = document.getElementById("weekBody");
+
+  function renderWeekTable() {
+    weekBodyEl.innerHTML = "";
+    const tk = todayKey();
+    DAY_KEYS.forEach(day => {
+      const tr = document.createElement("tr");
+      if (day === tk) tr.className = "today-row";
+      let cells = `<th>${day}</th>`;
+      ROUTINE[day].forEach(p => {
+        if (p === null) {
+          cells += `<td class="off">Off</td>`;
+        } else {
+          const cls = p.type === "practical" ? "practical" : "";
+          cells += `<td class="${cls}"><span class="wk-subj">${p.subject}</span><span class="wk-teach">${p.teacher}</span></td>`;
+        }
+      });
+      tr.innerHTML = cells;
+      weekBodyEl.appendChild(tr);
+    });
+  }
+
+  function renderAll() {
+    renderTabs();
+    renderPeriods();
+  }
+
+  renderAll();
+  renderWeekTable();
+
+  // live update every 30s in case the "now" period changes while page is open
+  setInterval(renderPeriods, 30000);
+
+  // ---------- VIEW TOGGLE ----------
+  const toggleBtn = document.getElementById("toggleViewBtn");
+  let gridMode = false;
+  toggleBtn.addEventListener("click", () => {
+    gridMode = !gridMode;
+    document.body.classList.toggle("grid-mode", gridMode);
+    document.body.classList.toggle("list-mode", !gridMode);
+    document.getElementById("weekGrid").classList.toggle("show", gridMode);
+    toggleBtn.textContent = gridMode ? "View day-by-day" : "View full week";
+  });
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"89c0ca56886947b1972bc8bb91fbc7f4","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
