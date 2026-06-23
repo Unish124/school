@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes — Class 12 'C'</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="dark"] {
+    --bg:        #121212;
+    --surface:   #181818;
+    --surface2:  #232323;
+    --border:    rgba(255,255,255,0.08);
+    --text:      #FFFFFF;
+    --text-dim:  #A8A8A8;
+    --text-mute: #6A6A6A;
+    --toggle-bg: #232323;
+    --toggle-border: rgba(255,255,255,0.12);
+    --blue:      #4F8EF7;
+    --blue-dim:  rgba(79,142,247,0.15);
+    --green:     #1DB954;
+    --green-dim: rgba(29,185,84,0.15);
+    --amber:     #F59B23;
+    --amber-dim: rgba(245,155,35,0.15);
+    --amber-glow:rgba(245,155,35,0.35);
+    --red:       #E05B5B;
+    --red-dim:   rgba(224,91,91,0.15);
+    --purple:    #A78BFA;
+    --purple-dim:rgba(167,139,250,0.15);
+  }
+  [data-theme="light"] {
+    --bg:        #F5F5F5;
+    --surface:   #FFFFFF;
+    --surface2:  #F0F0F0;
+    --border:    rgba(0,0,0,0.09);
+    --text:      #111111;
+    --text-dim:  #555555;
+    --text-mute: #999999;
+    --toggle-bg: #EBEBEB;
+    --toggle-border: rgba(0,0,0,0.1);
+    --blue:      #2F6FE0;
+    --blue-dim:  rgba(47,111,224,0.10);
+    --green:     #17a348;
+    --green-dim: rgba(23,163,72,0.10);
+    --amber:     #C47A10;
+    --amber-dim: rgba(196,122,16,0.10);
+    --amber-glow:rgba(196,122,16,0.25);
+    --red:       #C94040;
+    --red-dim:   rgba(201,64,64,0.10);
+    --purple:    #7C3AED;
+    --purple-dim:rgba(124,58,237,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 60px 20px 80px;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 700px 500px at 90% 0%, rgba(245,155,35,0.05), transparent);
+    pointer-events: none;
+  }
+
+  /* ---- TOP BAR ---- */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    text-decoration: none;
+    transition: color 0.18s ease;
+  }
+  .back-btn:hover { color: var(--text); }
+  .back-btn::before { content: "←"; font-size: 13px; }
+
+  .page-title-bar {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+  }
+
+  .theme-toggle {
+    background: var(--toggle-bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 100px;
+    padding: 5px 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .toggle-track {
+    width: 32px; height: 18px;
+    background: var(--border);
+    border-radius: 100px;
+    position: relative;
+    transition: background 0.25s ease;
+    flex-shrink: 0;
+  }
+  [data-theme="light"] .toggle-track { background: var(--text); }
+  .toggle-knob {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--text-mute);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.25s ease;
+  }
+  [data-theme="light"] .toggle-knob { background: #fff; transform: translateX(14px); }
+  .toggle-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-mute); user-select: none;
+  }
+
+  /* ---- MAIN ---- */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding-top: 20px;
+  }
+
+  .page-heading {
+    margin-bottom: 32px;
+  }
+  .page-heading h1 {
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .page-heading h1 span { color: var(--amber); }
+  .page-heading p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* ---- SUBJECT SECTIONS ---- */
+  .subject-section {
+    margin-bottom: 36px;
+  }
+
+  .subject-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .subject-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .subject-section.chemistry .subject-dot { background: var(--blue); }
+  .subject-section.physics   .subject-dot { background: var(--red); }
+  .subject-section.computer  .subject-dot { background: var(--amber); }
+  .subject-section.maths     .subject-dot { background: var(--green); }
+  .subject-section.english   .subject-dot { background: var(--purple); }
+
+  .subject-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .subject-section.chemistry .subject-label { color: var(--blue); }
+  .subject-section.physics   .subject-label { color: var(--red); }
+  .subject-section.computer  .subject-label { color: var(--amber); }
+  .subject-section.maths     .subject-label { color: var(--green); }
+  .subject-section.english   .subject-label { color: var(--purple); }
+
+  .subject-count {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 0.05em;
+  }
+
+  /* ---- NOTE CARDS ---- */
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .note-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .note-card:hover {
+    background: var(--surface2);
+    transform: translateX(4px);
+  }
+
+  .subject-section.chemistry .note-card:hover { border-color: rgba(79,142,247,0.3); }
+  .subject-section.physics   .note-card:hover { border-color: rgba(224,91,91,0.3); }
+  .subject-section.computer  .note-card:hover { border-color: rgba(245,155,35,0.3); }
+  .subject-section.maths     .note-card:hover { border-color: rgba(29,185,84,0.3); }
+  .subject-section.english   .note-card:hover { border-color: rgba(167,139,250,0.3); }
+
+  .note-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .subject-section.chemistry .note-icon { background: var(--blue-dim); }
+  .subject-section.physics   .note-icon { background: var(--red-dim); }
+  .subject-section.computer  .note-icon { background: var(--amber-dim); }
+  .subject-section.maths     .note-icon { background: var(--green-dim); }
+  .subject-section.english   .note-icon { background: var(--purple-dim); }
+
+  .note-info { flex: 1; min-width: 0; }
+  .note-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .note-meta {
+    font-size: 12px;
+    color: var(--text-mute);
+    margin-top: 2px;
+  }
+
+  .note-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; transform: scale(0.97); }
+  .btn:active { transform: scale(0.94); }
+
+  .btn-view {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid rgba(245,155,35,0.2);
+  }
+  .btn-download {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(29,185,84,0.2);
+  }
+
+  /* empty state */
+  .empty {
+    padding: 28px 20px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 13px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+  }
+
+  @media (max-width: 560px) {
+    .page-title-bar { display: none; }
+    .note-card { flex-wrap: wrap; gap: 12px; }
+    .note-actions { width: 100%; }
+    .btn { flex: 1; }
+    .note-meta { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .note-card, .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a class="back-btn" href="index.html">Back</a>
+  <span class="page-title-bar">Notes</span>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <span class="toggle-label" id="toggleLabel">Dark</span>
+    <div class="toggle-track"><div class="toggle-knob"></div></div>
+  </button>
+</div>
+
+<div class="wrap">
+  <div class="page-heading">
+    <h1>📝 <span>Notes</span></h1>
+    <p>Class 12 Science — chapter notes and references shared by teachers</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       CHEMISTRY
+  ════════════════════════════════════════════ -->
+  <div class="subject-section chemistry">
+    <div class="subject-header">
+      <div class="subject-dot"></div>
+      <span class="subject-label">Chemistry</span>
+      <span class="subject-count">2 notes</span>
+    </div>
+    <div class="notes-list">
+
+      <div class="note-card">
+        <div class="note-icon">🧪</div>
+        <div class="note-info">
+          <div class="note-title">Transition Metals</div>
+          <div class="note-meta">Chemistry · Chapter notes</div>
+        </div>
+        <div class="note-actions">
+          <a class="btn btn-view"     href="https://raw.githubusercontent.com/Unish124/school/main/notes/transition_metals.pdf" target="_blank">👁 View</a>
+          <a class="btn btn-download" href="https://raw.githubusercontent.com/Unish124/school/main/notes/transition_metals.pdf" download>⬇ Save</a>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-icon">🧫</div>
+        <div class="note-info">
+          <div class="note-title">Volumetric Analysis</div>
+          <div class="note-meta">Chemistry · Chapter notes</div>
+        </div>
+        <div class="note-actions">
+          <a class="btn btn-view"     href="https://raw.githubusercontent.com/Unish124/school/main/notes/volumetric_analysis.pdf" target="_blank">👁 View</a>
+          <a class="btn btn-download" href="https://raw.githubusercontent.com/Unish124/school/main/notes/volumetric_analysis.pdf" download>⬇ Save</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PHYSICS  
+  ════════════════════════════════════════════ -->
+  <div class="subject-section physics">
+    <div class="subject-header">
+      <div class="subject-dot"></div>
+      <span class="subject-label">Physics</span>
+      <span class="subject-count">0 notes</span>
+    </div>
+    <div class="notes-list">
+      <div class="empty">No physics notes yet — check back soon.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       COMPUTER SCIENCE  
+  ════════════════════════════════════════════ -->
+  <div class="subject-section computer">
+    <div class="subject-header">
+      <div class="subject-dot"></div>
+      <span class="subject-label">Computer Science</span>
+      <span class="subject-count">0 notes</span>
+    </div>
+    <div class="notes-list">
+      <div class="empty">No computer science notes yet — check back soon.</div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+  const html  = document.documentElement;
+  const btn   = document.getElementById('themeToggle');
+  const lbl   = document.getElementById('toggleLabel');
+  const saved = localStorage.getItem('theme') || 'dark';
+  html.setAttribute('data-theme', saved);
+  lbl.textContent = saved === 'dark' ? 'Dark' : 'Light';
+  btn.addEventListener('click', () => {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    lbl.textContent = next === 'dark' ? 'Dark' : 'Light';
+    localStorage.setItem('theme', next);
+  });
+</script>
+</body>
+</html>
