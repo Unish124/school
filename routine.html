@@ -39,7 +39,6 @@
     line-height:1.45;
   }
 
-  /* faint paper grain via repeating lines */
   body::before{
     content:"";
     position:fixed; inset:0;
@@ -56,7 +55,6 @@
     padding:28px 20px 80px;
   }
 
-  /* ---------- HEADER / LETTERHEAD ---------- */
   header{
     text-align:center;
     padding:6px 0 26px;
@@ -118,7 +116,6 @@
   .meta-row span{ display:inline-flex; align-items:center; gap:6px; }
   .meta-row b{ color:var(--ink); font-weight:600; }
 
-  /* ---------- DAY TABS ---------- */
   .tabs{
     display:flex;
     gap:6px;
@@ -167,7 +164,6 @@
   .tab.is-today .today-dot{ display:block; }
   .tab.is-today:not(.active){ color:var(--green); }
 
-  /* ---------- DAY HEADING ---------- */
   .day-heading{
     display:flex;
     align-items:baseline;
@@ -192,7 +188,20 @@
     border-radius:100px;
   }
 
-  /* ---------- PERIOD LIST (mobile-first card rows) ---------- */
+  /* SWIPE WRAPPER */
+  .swipe-outer{
+    overflow:hidden;
+    touch-action:pan-y;
+    user-select:none;
+  }
+  .swipe-track{
+    display:flex;
+    transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    will-change:transform;
+  }
+  .swipe-track.no-transition{ transition:none; }
+  .swipe-page{ min-width:100%; flex-shrink:0; }
+
   .periods{
     display:flex;
     flex-direction:column;
@@ -323,7 +332,6 @@
     white-space:nowrap;
   }
 
-  /* ---------- LEGEND ---------- */
   .legend{
     display:flex;
     flex-wrap:wrap;
@@ -353,7 +361,6 @@
     letter-spacing:0.02em;
   }
 
-  /* ---------- DESKTOP: full-week grid toggle ---------- */
   .view-toggle{
     display:flex;
     justify-content:flex-end;
@@ -446,12 +453,9 @@
   <div class="day-view">
     <nav class="tabs" id="tabs"></nav>
 
-    <div class="day-heading">
-      <h2 id="dayTitle">Monday</h2>
-      <span class="count" id="dayCount">8 periods</span>
+    <div class="swipe-outer" id="swipeOuter">
+      <div class="swipe-track" id="swipeTrack"></div>
     </div>
-
-    <div class="periods" id="periods"></div>
 
     <div class="legend">
       <span><i class="dot-green"></i> Happening now</span>
@@ -490,9 +494,6 @@
 </div>
 
 <script>
-  // ---------- DATA ----------
-  // Each day: array of 8 periods. null = Off/Holiday.
-  // type: "class" | "practical" | "off"
   const TIMES = [
     ["6:20", "7:00"],
     ["7:00", "7:40"],
@@ -569,18 +570,10 @@
 
   const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   const DAY_SHORT = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri" };
-
-  // JS getDay(): 0=Sun,1=Mon,...6=Sat
   const JS_DAY_TO_KEY = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday" };
 
-  function fullSubjectLabel(code) {
-    return SUBJECT_NAMES[code] || code;
-  }
-
-  function parseTimeToMinutes(t) {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  }
+  function fullSubjectLabel(code) { return SUBJECT_NAMES[code] || code; }
+  function parseTimeToMinutes(t) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
 
   function getCurrentPeriodIndex(dayKey) {
     const now = new Date();
@@ -595,81 +588,142 @@
     return -1;
   }
 
-  function todayKey() {
-    const now = new Date();
-    return JS_DAY_TO_KEY[now.getDay()] || null;
-  }
+  function todayKey() { return JS_DAY_TO_KEY[new Date().getDay()] || null; }
 
-  // ---------- RENDER: TABS ----------
+  // ---------- STATE ----------
   const tabsEl = document.getElementById("tabs");
-  let activeDay = todayKey() || "Monday";
+  const swipeTrack = document.getElementById("swipeTrack");
+  const swipeOuter = document.getElementById("swipeOuter");
 
-  function renderTabs() {
-    tabsEl.innerHTML = "";
-    const tk = todayKey();
-    DAY_KEYS.forEach(day => {
-      const btn = document.createElement("button");
-      btn.className = "tab" + (day === activeDay ? " active" : "") + (day === tk ? " is-today" : "");
-      btn.innerHTML = `<span class="full">${day}</span><span class="short">${DAY_SHORT[day]}</span><span class="today-dot"></span>`;
-      btn.addEventListener("click", () => { activeDay = day; renderAll(); });
-      tabsEl.appendChild(btn);
-    });
-  }
+  let activeDayIdx = DAY_KEYS.indexOf(todayKey() || "Monday");
+  if (activeDayIdx < 0) activeDayIdx = 0;
 
-  // ---------- RENDER: PERIOD LIST ----------
-  const periodsEl = document.getElementById("periods");
-  const dayTitleEl = document.getElementById("dayTitle");
-  const dayCountEl = document.getElementById("dayCount");
-
-  function renderPeriods() {
-    dayTitleEl.textContent = activeDay;
-    const periods = ROUTINE[activeDay];
+  // ---------- BUILD ALL PAGES ----------
+  function buildPeriodHTML(dayKey) {
+    const periods = ROUTINE[dayKey];
     const activeCount = periods.filter(p => p !== null).length;
-    dayCountEl.textContent = `${activeCount} period${activeCount === 1 ? "" : "s"}`;
-
-    const nowIdx = getCurrentPeriodIndex(activeDay);
-
-    periodsEl.innerHTML = "";
+    const nowIdx = getCurrentPeriodIndex(dayKey);
+    let html = `<div class="day-heading"><h2>${dayKey}</h2><span class="count">${activeCount} period${activeCount === 1 ? "" : "s"}</span></div><div class="periods">`;
     periods.forEach((p, i) => {
-      const row = document.createElement("div");
       const ordLabel = ["1st","2nd","3rd","4th","5th","6th","7th","8th"][i];
       const [start, end] = TIMES[i];
-
       let rowClasses = "period-row";
       if (i === nowIdx && p !== null) rowClasses += " is-now";
       if (p === null) rowClasses += " is-off";
       else if (p.type === "practical") rowClasses += " is-practical";
-      row.className = rowClasses;
-
       if (p === null) {
-        row.innerHTML = `
+        html += `<div class="${rowClasses}">
           <div class="p-num"><span class="ord">${ordLabel}</span><span class="lbl">Period</span></div>
-          <div class="p-main">
-            <div class="p-subject">Off <span class="tag off">Holiday</span></div>
-            <div class="p-teacher">No class scheduled</div>
-          </div>
+          <div class="p-main"><div class="p-subject">Off <span class="tag off">Holiday</span></div><div class="p-teacher">No class scheduled</div></div>
           <div class="p-time">${start} – ${end}</div>
-        `;
+        </div>`;
       } else {
         const tag = p.type === "practical" ? `<span class="tag">Practical</span>` : "";
         const isPractical = p.subject.includes("Practical");
         const displaySubject = isPractical ? p.subject : fullSubjectLabel(p.subject);
-        row.innerHTML = `
+        html += `<div class="${rowClasses}">
           <div class="p-num"><span class="ord">${ordLabel}</span><span class="lbl">Period</span></div>
-          <div class="p-main">
-            <div class="p-subject">${displaySubject} ${tag}</div>
-            <div class="p-teacher"><b>Teacher:</b> ${p.teacher}</div>
-          </div>
+          <div class="p-main"><div class="p-subject">${displaySubject} ${tag}</div><div class="p-teacher"><b>Teacher:</b> ${p.teacher}</div></div>
           <div class="p-time">${start} – ${end}</div>
-        `;
+        </div>`;
       }
-      periodsEl.appendChild(row);
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function buildAllPages() {
+    swipeTrack.innerHTML = "";
+    DAY_KEYS.forEach(day => {
+      const page = document.createElement("div");
+      page.className = "swipe-page";
+      page.innerHTML = buildPeriodHTML(day);
+      swipeTrack.appendChild(page);
     });
   }
 
-  // ---------- RENDER: FULL WEEK TABLE ----------
-  const weekBodyEl = document.getElementById("weekBody");
+  function goToDay(idx, animate) {
+    if (idx < 0 || idx >= DAY_KEYS.length) return;
+    activeDayIdx = idx;
+    if (animate === false) {
+      swipeTrack.classList.add("no-transition");
+      swipeTrack.style.transform = `translateX(-${idx * 100}%)`;
+      swipeTrack.offsetHeight; // force reflow
+      swipeTrack.classList.remove("no-transition");
+    } else {
+      swipeTrack.style.transform = `translateX(-${idx * 100}%)`;
+    }
+    renderTabs();
+  }
 
+  // ---------- RENDER TABS ----------
+  function renderTabs() {
+    tabsEl.innerHTML = "";
+    const tk = todayKey();
+    DAY_KEYS.forEach((day, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "tab" + (idx === activeDayIdx ? " active" : "") + (day === tk ? " is-today" : "");
+      btn.innerHTML = `<span class="full">${day}</span><span class="short">${DAY_SHORT[day]}</span><span class="today-dot"></span>`;
+      btn.addEventListener("click", () => goToDay(idx));
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  buildAllPages();
+  goToDay(activeDayIdx, false);
+
+  // ---------- SWIPE GESTURE ----------
+  let touchStartX = 0, touchStartY = 0, touchDeltaX = 0, isDragging = false, lockAxis = null;
+  const SWIPE_THRESHOLD = 50;
+  const DIRECTION_LOCK = 10;
+
+  swipeOuter.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchDeltaX = 0;
+    isDragging = false;
+    lockAxis = null;
+  }, { passive: true });
+
+  swipeOuter.addEventListener("touchmove", (e) => {
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (lockAxis === null) {
+      if (Math.abs(dx) > DIRECTION_LOCK || Math.abs(dy) > DIRECTION_LOCK) {
+        lockAxis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      }
+    }
+    if (lockAxis === "x") {
+      e.preventDefault();
+      isDragging = true;
+      touchDeltaX = dx;
+      swipeTrack.classList.add("no-transition");
+      swipeTrack.style.transform = `translateX(calc(${-activeDayIdx * 100}% + ${touchDeltaX}px))`;
+    }
+  }, { passive: false });
+
+  swipeOuter.addEventListener("touchend", () => {
+    swipeTrack.classList.remove("no-transition");
+    if (!isDragging) return;
+    if (touchDeltaX < -SWIPE_THRESHOLD && activeDayIdx < DAY_KEYS.length - 1) {
+      goToDay(activeDayIdx + 1);
+    } else if (touchDeltaX > SWIPE_THRESHOLD && activeDayIdx > 0) {
+      goToDay(activeDayIdx - 1);
+    } else {
+      goToDay(activeDayIdx);
+    }
+    isDragging = false;
+    touchDeltaX = 0;
+  }, { passive: true });
+
+  // live update every 30s
+  setInterval(() => {
+    buildAllPages();
+    swipeTrack.style.transform = `translateX(-${activeDayIdx * 100}%)`;
+  }, 30000);
+
+  // ---------- WEEK TABLE ----------
+  const weekBodyEl = document.getElementById("weekBody");
   function renderWeekTable() {
     weekBodyEl.innerHTML = "";
     const tk = todayKey();
@@ -689,17 +743,7 @@
       weekBodyEl.appendChild(tr);
     });
   }
-
-  function renderAll() {
-    renderTabs();
-    renderPeriods();
-  }
-
-  renderAll();
   renderWeekTable();
-
-  // live update every 30s in case the "now" period changes while page is open
-  setInterval(renderPeriods, 30000);
 
   // ---------- VIEW TOGGLE ----------
   const toggleBtn = document.getElementById("toggleViewBtn");
