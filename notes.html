@@ -243,21 +243,6 @@
   .subject-section.maths     .note-card:hover { border-color: rgba(29,185,84,0.3); }
   .subject-section.english   .note-card:hover { border-color: rgba(167,139,250,0.3); }
 
-  .note-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  .subject-section.chemistry .note-icon { background: var(--blue-dim); }
-  .subject-section.physics   .note-icon { background: var(--red-dim); }
-  .subject-section.computer  .note-icon { background: var(--amber-dim); }
-  .subject-section.maths     .note-icon { background: var(--green-dim); }
-  .subject-section.english   .note-icon { background: var(--purple-dim); }
-
   .note-info { flex: 1; min-width: 0; }
   .note-title {
     font-weight: 600;
@@ -349,9 +334,7 @@
     <p>Class 12 Science — chapter notes and references shared by teachers</p>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       CHEMISTRY
-  ════════════════════════════════════════════ -->
+  <!-- CHEMISTRY -->
   <div class="subject-section chemistry">
     <div class="subject-header">
       <div class="subject-dot"></div>
@@ -361,10 +344,8 @@
     <div class="notes-list">
 
       <div class="note-card">
-        <div class="note-icon">🧪</div>
         <div class="note-info">
           <div class="note-title">Transition Metals</div>
-          <div class="note-meta">Chemistry · Chapter notes</div>
         </div>
         <div class="note-actions">
           <a class="btn btn-view"     href="notes/transition_metals.pdf" target="_blank">👁 View</a>
@@ -373,10 +354,8 @@
       </div>
 
       <div class="note-card">
-        <div class="note-icon">🧫</div>
         <div class="note-info">
           <div class="note-title">Volumetric Analysis</div>
-          <div class="note-meta">Chemistry · Chapter notes</div>
         </div>
         <div class="note-actions">
           <a class="btn btn-view"     href="notes/volumetric_analysis.pdf" target="_blank">👁 View</a>
@@ -387,9 +366,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       PHYSICS  
-  ════════════════════════════════════════════ -->
+  <!-- PHYSICS -->
   <div class="subject-section physics">
     <div class="subject-header">
       <div class="subject-dot"></div>
@@ -401,9 +378,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       COMPUTER SCIENCE  
-  ════════════════════════════════════════════ -->
+  <!-- COMPUTER SCIENCE -->
   <div class="subject-section computer">
     <div class="subject-header">
       <div class="subject-dot"></div>
@@ -415,7 +390,7 @@
     </div>
   </div>
 
-</div><!-- /wrap -->
+</div>
 
 <script>
   const html  = document.documentElement;
