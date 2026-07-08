@@ -447,47 +447,6 @@
     cursor:pointer;
   }
 
-  .install-fab{
-    display:none;
-    position:fixed;
-    right:18px;
-    bottom:18px;
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    background:var(--green);
-    color:#fff;
-    border:none;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    box-shadow:0 4px 16px rgba(47,111,78,0.35);
-    z-index:50;
-    transition:transform .15s ease;
-  }
-  .install-fab.show{ display:flex; }
-  .install-fab:active{ transform:scale(0.93); }
-  .install-fab svg{ width:22px; height:22px; }
-
-  .install-tip{
-    display:none;
-    position:fixed;
-    right:18px;
-    bottom:78px;
-    max-width:230px;
-    background:var(--card);
-    border:1px solid var(--rule);
-    border-radius:12px;
-    padding:12px 14px;
-    font-size:12.5px;
-    color:var(--ink);
-    line-height:1.5;
-    box-shadow:var(--shadow);
-    z-index:50;
-  }
-  .install-tip.show{ display:block; }
-  .install-tip b{ color:var(--green); }
-
   .week-grid{ display:none; }
   .week-grid.show{ display:block; }
   .week-table-scroll{ overflow-x:auto; border-radius:14px; border:1px solid var(--rule); box-shadow:var(--shadow); }
@@ -662,11 +621,6 @@
     <button id="weekViewBtn" type="button">Full week</button>
     <button id="teacherViewBtn" type="button">Teacher report</button>
   </div>
-
-  <button class="install-fab" id="installBtn" type="button" aria-label="Save offline / install this page" title="Save offline">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
-  </button>
-  <div class="install-tip" id="installTip"></div>
 
   <!-- ===================== DAY-BY-DAY VIEW ===================== -->
   <div class="day-view">
@@ -1085,12 +1039,11 @@
     });
   }
 
-  // ---------- PWA: install banner + persistent floating icon ----------
+  // ---------- PWA: install banner ----------
   const installBanner = document.getElementById("installBanner");
   const installBannerBtn = document.getElementById("installBannerBtn");
   const installDismissBtn = document.getElementById("installDismissBtn");
-  const installBtn = document.getElementById("installBtn");
-  const installTip = document.getElementById("installTip");
+  const installBannerText = document.getElementById("installBannerText");
 
   const DISMISS_KEY = "routine12c_install_dismissed";
   let deferredPrompt = null;
@@ -1108,63 +1061,37 @@
   function setDismissed() {
     try { localStorage.setItem(DISMISS_KEY, "1"); } catch (e) {}
   }
-  function showTip(html) {
-    installTip.innerHTML = html;
-    installTip.classList.add("show");
-  }
-  function hideTip() {
-    installTip.classList.remove("show");
-  }
 
-  async function runInstall() {
-    if (deferredPrompt) {
-      hideTip();
-      installBanner.classList.remove("show");
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-    } else if (isIOS()) {
-      if (installTip.classList.contains("show")) { hideTip(); return; }
-      showTip("<b>Save offline:</b> tap the Share icon in Safari, then \"Add to Home Screen\".");
+  if (!isStandalone() && !wasDismissed()) {
+    if (isIOS()) {
+      // iOS never fires beforeinstallprompt — show manual instructions instead
+      installBannerText.innerHTML = "<b>Save this page:</b> tap the Share icon in Safari, then \"Add to Home Screen\".";
+      installBannerBtn.style.display = "none";
+      installBanner.classList.add("show");
     } else {
-      if (installTip.classList.contains("show")) { hideTip(); return; }
-      showTip("<b>Save offline:</b> open the browser menu (⋮) and choose \"Add to Home Screen\" or \"Install app\".");
-    }
-  }
-
-  if (!isStandalone()) {
-    installBtn.classList.add("show"); // floating icon always shown
-
-    if (!wasDismissed()) {
-      if (isIOS()) {
-        installBannerBtn.style.display = "none";
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
         installBanner.classList.add("show");
-      } else {
-        window.addEventListener("beforeinstallprompt", (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          installBanner.classList.add("show");
-        });
-      }
+      });
     }
-
-    installBannerBtn.addEventListener("click", runInstall);
-    installBtn.addEventListener("click", runInstall);
-
-    installDismissBtn.addEventListener("click", () => {
-      installBanner.classList.remove("show");
-      setDismissed();
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!installTip.contains(e.target) && !installBtn.contains(e.target)) hideTip();
-    });
   }
+
+  installBannerBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    installBanner.classList.remove("show");
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  });
+
+  installDismissBtn.addEventListener("click", () => {
+    installBanner.classList.remove("show");
+    setDismissed();
+  });
 
   window.addEventListener("appinstalled", () => {
     installBanner.classList.remove("show");
-    installBtn.classList.remove("show");
-    hideTip();
   });
 </script>
 </body>
