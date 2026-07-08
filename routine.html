@@ -1063,26 +1063,32 @@
   }
 
   if (!isStandalone() && !wasDismissed()) {
+    installBanner.classList.add("show"); // show immediately, don't wait on a flaky browser event
+
     if (isIOS()) {
       // iOS never fires beforeinstallprompt — show manual instructions instead
       installBannerText.innerHTML = "<b>Save this page:</b> tap the Share icon in Safari, then \"Add to Home Screen\".";
       installBannerBtn.style.display = "none";
-      installBanner.classList.add("show");
     } else {
+      // Chrome/Android: capture the real prompt if/when it fires
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        installBanner.classList.add("show");
       });
     }
   }
 
   installBannerBtn.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    installBanner.classList.remove("show");
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
+    if (deferredPrompt) {
+      installBanner.classList.remove("show");
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    } else {
+      // Prompt event hasn't fired yet (or browser doesn't support it) — show manual steps
+      installBannerText.innerHTML = "<b>Save this page:</b> open the browser menu (⋮) and choose \"Add to Home Screen\" or \"Install app\".";
+      installBannerBtn.style.display = "none";
+    }
   });
 
   installDismissBtn.addEventListener("click", () => {
