@@ -399,50 +399,46 @@
     border-color:var(--ink);
   }
 
-  .install-banner{
+  .install-fab{
     display:none;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-    background:var(--green-soft);
-    border:1px solid rgba(47,111,78,0.3);
-    border-radius:14px;
-    padding:14px 16px;
-    margin-bottom:18px;
-  }
-  .install-banner.show{ display:flex; }
-  .install-banner .ib-text{
-    font-size:13px;
-    color:var(--ink);
-    line-height:1.4;
-  }
-  .install-banner .ib-text b{ color:var(--green); }
-  .install-banner button{
-    font-family:'Inter', sans-serif;
-    font-weight:700;
-    font-size:13px;
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    width:52px;
+    height:52px;
+    border-radius:50%;
     background:var(--green);
     color:#fff;
     border:none;
-    padding:9px 16px;
-    border-radius:9px;
-    cursor:pointer;
-    white-space:nowrap;
-    transition:transform .12s ease, opacity .12s ease;
-    display:inline-flex;
     align-items:center;
-    gap:7px;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 4px 16px rgba(47,111,78,0.35);
+    z-index:50;
+    transition:transform .15s ease;
   }
-  .install-banner button svg{ flex-shrink:0; }
-  .install-banner button:hover{ opacity:0.9; }
-  .install-banner button:active{ transform:scale(0.97); }
-  .install-banner .ib-dismiss{
-    background:transparent;
-    color:var(--ink-soft);
-    font-weight:600;
-    padding:9px 10px;
+  .install-fab.show{ display:flex; }
+  .install-fab:active{ transform:scale(0.93); }
+  .install-fab svg{ width:22px; height:22px; }
+
+  .install-tip{
+    display:none;
+    position:fixed;
+    right:18px;
+    bottom:78px;
+    max-width:230px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:12.5px;
+    color:var(--ink);
+    line-height:1.5;
+    box-shadow:var(--shadow);
+    z-index:50;
   }
+  .install-tip.show{ display:block; }
+  .install-tip b{ color:var(--green); }
 
   .week-grid{ display:none; }
   .week-grid.show{ display:block; }
@@ -605,13 +601,10 @@
     <h1>Class 12 <em>'C'</em> Routine</h1>
   </header>
 
-  <div class="install-banner" id="installBanner">
-    <span class="ib-text" id="installBannerText"><b>Install this page</b> to open it instantly, even with no internet.</span>
-    <span style="display:flex; gap:8px;">
-      <button class="ib-dismiss" id="installDismissBtn" type="button">Not now</button>
-      <button id="installBtn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>Offline</button>
-    </span>
-  </div>
+  <button class="install-fab" id="installBtn" type="button" aria-label="Save offline / install this page" title="Save offline">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+  </button>
+  <div class="install-tip" id="installTip"></div>
 
   <div class="view-toggle">
     <button id="dayViewBtn" type="button" class="active-mode">Day-by-day</button>
@@ -1036,13 +1029,10 @@
     });
   }
 
-  // ---------- PWA: Install button ----------
-  const installBanner = document.getElementById("installBanner");
-  const installBannerText = document.getElementById("installBannerText");
+  // ---------- PWA: persistent install icon ----------
   const installBtn = document.getElementById("installBtn");
-  const installDismissBtn = document.getElementById("installDismissBtn");
+  const installTip = document.getElementById("installTip");
 
-  const DISMISS_KEY = "routine12c_install_dismissed";
   let deferredPrompt = null;
 
   function isStandalone() {
@@ -1054,44 +1044,47 @@
     return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   }
 
-  function wasDismissed() {
-    try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch (e) { return false; }
+  function showTip(html) {
+    installTip.innerHTML = html;
+    installTip.classList.add("show");
   }
-  function setDismissed() {
-    try { localStorage.setItem(DISMISS_KEY, "1"); } catch (e) {}
+  function hideTip() {
+    installTip.classList.remove("show");
   }
 
-  if (!isStandalone() && !wasDismissed()) {
-    if (isIOS()) {
-      // iOS never fires beforeinstallprompt — show manual instructions instead
-      installBannerText.innerHTML = "<b>Install this page:</b> tap the Share icon, then \"Add to Home Screen\".";
-      installBtn.style.display = "none";
-      installBanner.classList.add("show");
-    } else {
-      // Android/desktop Chrome: wait for the real install prompt event
+  if (!isStandalone()) {
+    installBtn.classList.add("show");
+
+    if (!isIOS()) {
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        installBanner.classList.add("show");
       });
     }
+
+    installBtn.addEventListener("click", async () => {
+      if (deferredPrompt) {
+        hideTip();
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      } else if (isIOS()) {
+        if (installTip.classList.contains("show")) { hideTip(); return; }
+        showTip("<b>Save offline:</b> tap the Share icon in Safari, then \"Add to Home Screen\".");
+      } else {
+        if (installTip.classList.contains("show")) { hideTip(); return; }
+        showTip("<b>Save offline:</b> open the browser menu (⋮) and choose \"Add to Home Screen\" or \"Install app\".");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!installTip.contains(e.target) && !installBtn.contains(e.target)) hideTip();
+    });
   }
 
-  installBtn.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    installBanner.classList.remove("show");
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  });
-
-  installDismissBtn.addEventListener("click", () => {
-    installBanner.classList.remove("show");
-    setDismissed();
-  });
-
   window.addEventListener("appinstalled", () => {
-    installBanner.classList.remove("show");
+    installBtn.classList.remove("show");
+    hideTip();
   });
 </script>
 </body>
