@@ -399,6 +399,54 @@
     border-color:var(--ink);
   }
 
+  .install-banner{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    background:var(--green-soft);
+    border:1px solid rgba(47,111,78,0.3);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:18px;
+  }
+  .install-banner.show{ display:flex; }
+  .install-banner .ib-text{
+    font-size:13px;
+    color:var(--ink);
+    line-height:1.4;
+  }
+  .install-banner .ib-text b{ color:var(--green); }
+  .install-banner .ib-action{
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    background:var(--green);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:transform .12s ease, opacity .12s ease;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+  }
+  .install-banner .ib-action svg{ flex-shrink:0; }
+  .install-banner .ib-action:hover{ opacity:0.9; }
+  .install-banner .ib-action:active{ transform:scale(0.97); }
+  .install-banner .ib-dismiss{
+    background:transparent;
+    color:var(--ink-soft);
+    font-weight:600;
+    font-size:13px;
+    border:none;
+    padding:9px 10px;
+    cursor:pointer;
+  }
+
   .install-fab{
     display:none;
     position:fixed;
@@ -601,16 +649,24 @@
     <h1>Class 12 <em>'C'</em> Routine</h1>
   </header>
 
-  <button class="install-fab" id="installBtn" type="button" aria-label="Save offline / install this page" title="Save offline">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
-  </button>
-  <div class="install-tip" id="installTip"></div>
+  <div class="install-banner" id="installBanner">
+    <span class="ib-text" id="installBannerText"><b>Save this page</b> to open it instantly, even with no internet.</span>
+    <span style="display:flex; gap:8px;">
+      <button class="ib-dismiss" id="installDismissBtn" type="button">Not now</button>
+      <button class="ib-action" id="installBannerBtn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>Offline</button>
+    </span>
+  </div>
 
   <div class="view-toggle">
     <button id="dayViewBtn" type="button" class="active-mode">Day-by-day</button>
     <button id="weekViewBtn" type="button">Full week</button>
     <button id="teacherViewBtn" type="button">Teacher report</button>
   </div>
+
+  <button class="install-fab" id="installBtn" type="button" aria-label="Save offline / install this page" title="Save offline">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+  </button>
+  <div class="install-tip" id="installTip"></div>
 
   <!-- ===================== DAY-BY-DAY VIEW ===================== -->
   <div class="day-view">
@@ -1029,21 +1085,29 @@
     });
   }
 
-  // ---------- PWA: persistent install icon ----------
+  // ---------- PWA: install banner + persistent floating icon ----------
+  const installBanner = document.getElementById("installBanner");
+  const installBannerBtn = document.getElementById("installBannerBtn");
+  const installDismissBtn = document.getElementById("installDismissBtn");
   const installBtn = document.getElementById("installBtn");
   const installTip = document.getElementById("installTip");
 
+  const DISMISS_KEY = "routine12c_install_dismissed";
   let deferredPrompt = null;
 
   function isStandalone() {
     return window.matchMedia("(display-mode: standalone)").matches
       || window.navigator.standalone === true; // iOS Safari flag
   }
-
   function isIOS() {
     return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   }
-
+  function wasDismissed() {
+    try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch (e) { return false; }
+  }
+  function setDismissed() {
+    try { localStorage.setItem(DISMISS_KEY, "1"); } catch (e) {}
+  }
   function showTip(html) {
     installTip.innerHTML = html;
     installTip.classList.add("show");
@@ -1052,29 +1116,44 @@
     installTip.classList.remove("show");
   }
 
-  if (!isStandalone()) {
-    installBtn.classList.add("show");
+  async function runInstall() {
+    if (deferredPrompt) {
+      hideTip();
+      installBanner.classList.remove("show");
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    } else if (isIOS()) {
+      if (installTip.classList.contains("show")) { hideTip(); return; }
+      showTip("<b>Save offline:</b> tap the Share icon in Safari, then \"Add to Home Screen\".");
+    } else {
+      if (installTip.classList.contains("show")) { hideTip(); return; }
+      showTip("<b>Save offline:</b> open the browser menu (⋮) and choose \"Add to Home Screen\" or \"Install app\".");
+    }
+  }
 
-    if (!isIOS()) {
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-      });
+  if (!isStandalone()) {
+    installBtn.classList.add("show"); // floating icon always shown
+
+    if (!wasDismissed()) {
+      if (isIOS()) {
+        installBannerBtn.style.display = "none";
+        installBanner.classList.add("show");
+      } else {
+        window.addEventListener("beforeinstallprompt", (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          installBanner.classList.add("show");
+        });
+      }
     }
 
-    installBtn.addEventListener("click", async () => {
-      if (deferredPrompt) {
-        hideTip();
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-      } else if (isIOS()) {
-        if (installTip.classList.contains("show")) { hideTip(); return; }
-        showTip("<b>Save offline:</b> tap the Share icon in Safari, then \"Add to Home Screen\".");
-      } else {
-        if (installTip.classList.contains("show")) { hideTip(); return; }
-        showTip("<b>Save offline:</b> open the browser menu (⋮) and choose \"Add to Home Screen\" or \"Install app\".");
-      }
+    installBannerBtn.addEventListener("click", runInstall);
+    installBtn.addEventListener("click", runInstall);
+
+    installDismissBtn.addEventListener("click", () => {
+      installBanner.classList.remove("show");
+      setDismissed();
     });
 
     document.addEventListener("click", (e) => {
@@ -1083,6 +1162,7 @@
   }
 
   window.addEventListener("appinstalled", () => {
+    installBanner.classList.remove("show");
     installBtn.classList.remove("show");
     hideTip();
   });
