@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Class 12 'C' — Weekly Routine | Devi Secondary School</title>
+
+<!-- PWA additions -->
+<link rel="manifest" href="/routine-manifest.json">
+<meta name="theme-color" content="#2F6F4E">
+<link rel="apple-touch-icon" href="/routine-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="12C Routine">
+<!-- end PWA additions -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -961,6 +971,17 @@
   teacherViewBtn.addEventListener("click", () => setMode("teacher"));
 
   setMode("day");
+
+  // ---------- PWA: register service worker for full offline support ----------
+  // Scoped to just this page ("/routine.html") so it never intercepts
+  // requests for index.html, notes.html, or books.html on this site.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/routine-sw.js", { scope: "/routine.html" }).catch((err) => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
