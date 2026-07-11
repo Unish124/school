@@ -66,6 +66,31 @@
     padding:28px 20px 80px;
   }
 
+  .back-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:none;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:100px;
+    padding:8px 14px 8px 10px;
+    box-shadow:var(--shadow);
+    margin-bottom:16px;
+    transition:transform .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .back-btn svg{ flex-shrink:0; }
+  .back-btn:hover{
+    color:var(--green);
+    border-color:rgba(47,111,78,0.35);
+    transform:translateX(-2px);
+  }
+  .back-btn:active{ transform:translateX(-2px) scale(0.97); }
+
   header{
     text-align:center;
     padding:6px 0 26px;
@@ -633,6 +658,11 @@
 </head>
 <body class="list-mode">
 <div class="wrap">
+
+  <a class="back-btn" href="https://college.unish.info.np/" aria-label="Back to college home">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    Back
+  </a>
 
   <header>
     <p class="school-name">Daily Routine of Class XII (Science) — Change Date: 2083/03/15</p>
