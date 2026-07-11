@@ -447,6 +447,37 @@
     cursor:pointer;
   }
 
+  /* Floating persistent install/download button (shown after "Not now") */
+  .floating-install-btn{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:var(--green);
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    box-shadow:0 8px 20px -6px rgba(47,111,78,0.55), 0 2px 6px rgba(35,32,26,0.15);
+    z-index:40;
+  }
+  .floating-install-btn.show{ display:flex; }
+  .floating-install-btn:hover{ transform:translateY(-2px) !important; box-shadow:0 12px 26px -6px rgba(47,111,78,0.6); }
+  .floating-install-btn:active{ transform:scale(0.95) !important; }
+
+  /* Banner dismiss animation — fades/slides up and out while the
+     floating button flies in from the banner's position */
+  .install-banner.dismissing{
+    opacity:0;
+    transform:translateY(-10px) scale(0.97);
+    transition:opacity .3s ease, transform .3s ease;
+    pointer-events:none;
+  }
+
   .week-grid{ display:none; }
   .week-grid.show{ display:block; }
   .week-table-scroll{ overflow-x:auto; border-radius:14px; border:1px solid var(--rule); box-shadow:var(--shadow); }
@@ -676,6 +707,11 @@
   <footer>Devi Secondary School, Birtamod-5, Jhapa &middot; Class 12 &lsquo;C&rsquo; Routine &middot; Built for quick reference</footer>
 </div>
 
+<!-- Persistent floating download/install button (appears after banner is dismissed) -->
+<button class="floating-install-btn" id="floatingInstallBtn" type="button" title="Save for offline use" aria-label="Save for offline use">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+</button>
+
 <script>
   const TIMES = [
     ["6:20", "7:00"],
@@ -740,8 +776,8 @@
       null,
     ],
     Friday: [
-      { subject: "PHY-CHE Practical", teacher: "SK, AT", type: "practical" },
-      { subject: "PHY-CHE Practical", teacher: "SK, AT", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "SK, BN", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "SK, BN", type: "practical" },
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "PHY", teacher: "DA", type: "class" },
@@ -1039,11 +1075,12 @@
     });
   }
 
-  // ---------- PWA: install banner ----------
+  // ---------- PWA: install banner + persistent floating button ----------
   const installBanner = document.getElementById("installBanner");
   const installBannerBtn = document.getElementById("installBannerBtn");
   const installDismissBtn = document.getElementById("installDismissBtn");
   const installBannerText = document.getElementById("installBannerText");
+  const floatingInstallBtn = document.getElementById("floatingInstallBtn");
 
   const DISMISS_KEY = "routine12c_install_dismissed";
   let deferredPrompt = null;
@@ -1062,8 +1099,9 @@
     try { localStorage.setItem(DISMISS_KEY, "1"); } catch (e) {}
   }
 
-  if (!isStandalone() && !wasDismissed()) {
-    installBanner.classList.add("show"); // show immediately, don't wait on a flaky browser event
+  function showBanner() {
+    installBanner.classList.add("show");
+    floatingInstallBtn.classList.remove("show");
 
     if (isIOS()) {
       // iOS never fires beforeinstallprompt — show manual instructions instead
@@ -1075,6 +1113,59 @@
         e.preventDefault();
         deferredPrompt = e;
       });
+    }
+  }
+
+  function showFloatingButton() {
+    installBanner.classList.remove("show");
+    floatingInstallBtn.classList.add("show");
+  }
+
+  // Animates the banner dismissing (fade + slide up) while the floating
+  // button flies in from the exact spot the banner's button was sitting,
+  // then eases into its resting corner with a little bounce.
+  function dismissBannerWithFlight() {
+    const startEl = installBannerBtn.offsetParent ? installBannerBtn : installDismissBtn;
+    const startRect = startEl.getBoundingClientRect();
+
+    // Fade/slide the banner out
+    installBanner.classList.add("dismissing");
+    setTimeout(() => {
+      installBanner.classList.remove("show", "dismissing");
+    }, 300);
+
+    // Reveal the floating button, but first pin it to the banner's position
+    floatingInstallBtn.classList.add("show");
+    const endRect = floatingInstallBtn.getBoundingClientRect();
+    const dx = (startRect.left + startRect.width / 2) - (endRect.left + endRect.width / 2);
+    const dy = (startRect.top + startRect.height / 2) - (endRect.top + endRect.height / 2);
+
+    floatingInstallBtn.style.transition = "none";
+    floatingInstallBtn.style.transform = `translate(${dx}px, ${dy}px) scale(0.55)`;
+    floatingInstallBtn.style.opacity = "0";
+
+    // force reflow so the browser registers the start state before animating
+    floatingInstallBtn.offsetHeight;
+
+    requestAnimationFrame(() => {
+      floatingInstallBtn.style.transition = "transform .55s cubic-bezier(.34,1.56,.64,1), opacity .35s ease";
+      floatingInstallBtn.style.transform = "translate(0, 0) scale(1)";
+      floatingInstallBtn.style.opacity = "1";
+    });
+
+    floatingInstallBtn.addEventListener("transitionend", function cleanup() {
+      floatingInstallBtn.style.transition = "";
+      floatingInstallBtn.removeEventListener("transitionend", cleanup);
+    });
+  }
+
+  if (!isStandalone()) {
+    if (wasDismissed()) {
+      // Previously dismissed — keep just the small persistent button around
+      showFloatingButton();
+    } else {
+      // First time (or not yet dismissed) — show the full banner
+      showBanner();
     }
   }
 
@@ -1092,12 +1183,24 @@
   });
 
   installDismissBtn.addEventListener("click", () => {
-    installBanner.classList.remove("show");
     setDismissed();
+    dismissBannerWithFlight();
+  });
+
+  floatingInstallBtn.addEventListener("click", async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    } else {
+      // Re-open the banner so the person can see install instructions again
+      showBanner();
+    }
   });
 
   window.addEventListener("appinstalled", () => {
     installBanner.classList.remove("show");
+    floatingInstallBtn.classList.remove("show");
   });
 </script>
 </body>
