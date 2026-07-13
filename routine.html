@@ -1115,6 +1115,16 @@
   const DISMISS_KEY = "routine12c_install_dismissed";
   let deferredPrompt = null;
 
+  // Capture the real install prompt as soon as the browser offers it —
+  // registered unconditionally (not just while the banner is open) so it's
+  // ready whether the person clicks the banner button or the floating button.
+  if (!isIOS()) {
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+  }
+
   function isStandalone() {
     return window.matchMedia("(display-mode: standalone)").matches
       || window.navigator.standalone === true; // iOS Safari flag
@@ -1137,12 +1147,6 @@
       // iOS never fires beforeinstallprompt — show manual instructions instead
       installBannerText.innerHTML = "<b>Save this page:</b> tap the Share icon in Safari, then \"Add to Home Screen\".";
       installBannerBtn.style.display = "none";
-    } else {
-      // Chrome/Android: capture the real prompt if/when it fires
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-      });
     }
   }
 
