@@ -138,6 +138,21 @@
     letter-spacing:0.02em;
     margin:0 0 2px;
   }
+  .effective-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    color:var(--red);
+    background:var(--red-soft);
+    border:1px solid rgba(166,68,58,0.3);
+    padding:5px 12px;
+    border-radius:100px;
+    margin:8px 0 2px;
+  }
   .meta-row{
     display:flex;
     justify-content:center;
@@ -667,6 +682,7 @@
   <header>
     <p class="school-name">Daily Routine of Class XII (Science) — Change Date: 2083/03/15</p>
     <h1>Class 12 <em>'C'</em> Routine</h1>
+    <span class="effective-badge">Effective from 30 Ashadh, 2083</span>
   </header>
 
   <div class="install-banner" id="installBanner">
@@ -770,14 +786,14 @@
       { subject: "PHY", teacher: "SK", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "COM", teacher: "MANISH", type: "class" },
-      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "CHE", teacher: "AT", type: "class" },
       { subject: "PHY", teacher: "TNK", type: "class" },
       null,
       null,
     ],
     Tuesday: [
       { subject: "MATH", teacher: "SL", type: "class" },
-      { subject: "PHY", teacher: "TNK", type: "class" },
+      { subject: "PHY", teacher: "SK", type: "class" },
       { subject: "COM", teacher: "CNS", type: "class" },
       { subject: "CHE", teacher: "MANJU", type: "class" },
       { subject: "NEP", teacher: "LILA", type: "class" },
@@ -786,8 +802,8 @@
       null,
     ],
     Wednesday: [
-      { subject: "NEP", teacher: "YD", type: "class" },
       { subject: "CHE", teacher: "BN", type: "class" },
+      { subject: "NEP", teacher: "LILA", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "CHE", teacher: "MANJU", type: "class" },
       { subject: "COM", teacher: "MANISH", type: "class" },
@@ -799,7 +815,7 @@
       { subject: "NEP", teacher: "YD", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "PHY", teacher: "DA", type: "class" },
-      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "CHE", teacher: "AT", type: "class" },
       { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
       { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
