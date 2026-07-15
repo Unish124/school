@@ -105,12 +105,37 @@
   }
   .panel-label{ font-size:13px; font-weight:600; color:var(--text-dim); }
 
+  /* code editor with line-number gutter */
+  .editor{
+    position:relative;
+    display:flex;
+    background:var(--surface);
+  }
+  .gutter{
+    flex-shrink:0;
+    width:44px;
+    padding:16px 0;
+    text-align:right;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--text-mute);
+    background:var(--surface2);
+    border-right:1px solid var(--border);
+    overflow:hidden;
+    user-select:none;
+  }
+  .gutter div{ padding-right:10px; }
+
   textarea#code{
+    flex:1;
     width:100%; min-height:200px; resize:vertical;
     background:var(--surface); color:var(--text);
     border:none; outline:none;
     font-family:'JetBrains Mono', monospace; font-size:13.5px; line-height:1.6;
     padding:16px 18px; tab-size:4;
+    white-space:pre;
+    overflow:auto;
   }
 
   .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -126,6 +151,18 @@
   .btn:disabled{ opacity:.5; cursor:not-allowed; }
   .btn-run{ background:var(--green-dim); color:var(--green); }
   .btn-clear{ background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong); }
+  .btn-fullscreen{
+    background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong);
+    padding:8px 10px;
+  }
+  .btn-fullscreen svg{ width:15px; height:15px; display:block; }
+
+  .panel.is-fullscreen{
+    position:fixed; inset:0; z-index:1000; margin:0; border-radius:0;
+    display:flex; flex-direction:column; height:100vh;
+  }
+  .panel.is-fullscreen .editor{ flex:1; }
+  .panel.is-fullscreen textarea#code{ min-height:100%; height:100%; }
 
   .sql-hint{ font-size:12px; color:var(--text-mute); padding:10px 16px 0; }
 
@@ -184,15 +221,22 @@
     <p>Run SQL queries against a sample database — entirely in your browser.</p>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="codePanel">
     <div class="panel-header">
       <span class="panel-label">query.sql</span>
       <div class="toolbar">
+        <button class="btn btn-fullscreen" id="fullscreenBtn" type="button" aria-label="Toggle fullscreen" title="Fullscreen">
+          <svg id="fullscreenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+          </svg>
+        </button>
         <button class="btn btn-clear" id="resetBtn">Reset DB</button>
         <button class="btn btn-run" id="runBtn">▶ Run</button>
       </div>
     </div>
-    <textarea id="code" spellcheck="false">CREATE DATABASE school;
+    <div class="editor">
+      <div class="gutter" id="gutter"><div>1</div></div>
+      <textarea id="code" spellcheck="false">CREATE DATABASE school;
 
 CREATE TABLE students (
   id INTEGER PRIMARY KEY,
@@ -203,6 +247,7 @@ CREATE TABLE students (
 INSERT INTO students (name, marks) VALUES ('Aarav', 88);
 
 SELECT * FROM students;</textarea>
+    </div>
   </div>
 
   <div class="panel">
@@ -239,6 +284,7 @@ SELECT * FROM students;</textarea>
   themeBtn.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
 
   const codeEl = document.getElementById('code');
+  const gutterEl = document.getElementById('gutter');
   const outputEl = document.getElementById('output');
   const schemaEl = document.getElementById('schema');
   const schemaToggleBtn = document.getElementById('schemaToggleBtn');
@@ -255,6 +301,58 @@ SELECT * FROM students;</textarea>
   const statusText = document.getElementById('statusText');
   const runBtn = document.getElementById('runBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const fullscreenIcon = document.getElementById('fullscreenIcon');
+  const codePanel = document.getElementById('codePanel');
+
+  // ---- line-number gutter ----
+  function updateGutter() {
+    const lineCount = codeEl.value.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= lineCount; i++) html += '<div>' + i + '</div>';
+    gutterEl.innerHTML = html;
+    gutterEl.scrollTop = codeEl.scrollTop;
+  }
+  codeEl.addEventListener('input', updateGutter);
+  codeEl.addEventListener('scroll', () => { gutterEl.scrollTop = codeEl.scrollTop; });
+  window.addEventListener('resize', updateGutter);
+  updateGutter();
+
+  // ---- fullscreen toggle ----
+  const EXPAND_PATH = 'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3';
+  const COLLAPSE_PATH = 'M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3';
+
+  function setFullscreenIcon(isFull) {
+    fullscreenIcon.querySelector('path').setAttribute('d', isFull ? COLLAPSE_PATH : EXPAND_PATH);
+    fullscreenBtn.title = isFull ? 'Exit fullscreen' : 'Fullscreen';
+  }
+
+  fullscreenBtn.addEventListener('click', async () => {
+    const supportsFS = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    if (supportsFS) {
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          await (codePanel.requestFullscreen ? codePanel.requestFullscreen() : codePanel.webkitRequestFullscreen());
+        } else {
+          await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen());
+        }
+        return;
+      } catch (e) {
+        // fall through to CSS-only fallback below
+      }
+    }
+    codePanel.classList.toggle('is-fullscreen');
+    setFullscreenIcon(codePanel.classList.contains('is-fullscreen'));
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    setFullscreenIcon(!!document.fullscreenElement);
+    updateGutter();
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    setFullscreenIcon(!!document.webkitFullscreenElement);
+    updateGutter();
+  });
 
   codeEl.addEventListener('keydown', (e) => {
     if (e.key === 'Tab') {
@@ -262,6 +360,7 @@ SELECT * FROM students;</textarea>
       const start = codeEl.selectionStart, end = codeEl.selectionEnd;
       codeEl.value = codeEl.value.slice(0, start) + '    ' + codeEl.value.slice(end);
       codeEl.selectionStart = codeEl.selectionEnd = start + 4;
+      updateGutter();
     }
   });
 
