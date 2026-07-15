@@ -198,7 +198,10 @@
       <span class="panel-label">main.c</span>
       <div class="toolbar">
         <select id="langVersion">
-          <option value="10.2.0">GCC 10.2.0</option>
+          <option value="gcc-head-c">GCC (head)</option>
+          <option value="gcc-13.2.0-c">GCC 13.2.0</option>
+          <option value="gcc-12.1.0-c">GCC 12.1.0</option>
+          <option value="clang-head-c">Clang (head)</option>
         </select>
         <button class="btn btn-clear" id="clearBtn">Clear</button>
         <button class="btn btn-run" id="runBtn">▶ Run</button>
@@ -283,40 +286,37 @@ int main() {
     outputEl.textContent = 'Working...';
 
     try {
-      const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+      const compilerId = document.getElementById('langVersion').value;
+      const res = await fetch('https://wandbox.org/api/compile.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          language: 'c',
-          version: '10.2.0',
-          files: [{ name: 'main.c', content: source }],
-          stdin: stdinInput.value || ''
+          code: source,
+          compiler: compilerId,
+          stdin: stdinInput.value || '',
+          options: 'warning,gnu17'
         })
       });
 
       if (!res.ok) throw new Error('Network response was not OK (' + res.status + ')');
       const data = await res.json();
 
-      const compile = data.compile || {};
-      const run = data.run || {};
       let text = '';
+      if (data.compiler_output) text += data.compiler_output;
+      if (data.compiler_error) text += data.compiler_error;
+      if (data.program_output) text += data.program_output;
+      if (data.program_error) text += data.program_error;
 
-      if (compile.stderr && compile.stderr.trim()) {
-        text += compile.stderr.trim() + '\n';
-      }
-      if (run.stdout) text += run.stdout;
-      if (run.stderr) text += run.stderr;
-
-      const hadCompileError = compile.code !== undefined && compile.code !== 0;
-      const hadRuntimeError = run.code !== undefined && run.code !== 0;
+      const compileFailed = data.compiler_error && !data.program_output && !data.program_error && data.status !== '0';
+      const hadRuntimeError = data.status !== undefined && data.status !== '0';
 
       if (!text.trim()) text = '(no output)';
       outputEl.textContent = text;
 
-      if (hadCompileError || hadRuntimeError) {
+      if (hadRuntimeError) {
         outputEl.className = 'err';
         statusDot.className = 'status-dot error';
-        statusText.textContent = hadCompileError ? 'Compile error' : `Exited with code ${run.code}`;
+        statusText.textContent = compileFailed ? 'Compile error' : `Exited with code ${data.status}`;
       } else {
         outputEl.className = 'ok';
         statusDot.className = 'status-dot success';
