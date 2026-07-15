@@ -171,6 +171,35 @@
   .stdin-row{ padding:12px 16px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:6px; }
   .stdin-row label{ font-size:12.5px; color:var(--text-dim); font-weight:600; }
   .stdin-hint{ font-size:11.5px; color:var(--text-mute); line-height:1.5; }
+
+  .detected-inputs{ padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .detected-inputs.empty{ padding:14px 16px; }
+  .detected-empty-msg{ font-size:12.5px; color:var(--text-mute); }
+  .input-field-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .input-field-label{
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--text-dim);
+    flex:1 1 220px; min-width:160px;
+  }
+  .input-field-label .var-tag{
+    display:inline-block; margin-left:6px; font-size:10.5px; font-weight:600;
+    color:var(--accent); background:var(--accent-dim); border-radius:5px; padding:1px 6px;
+  }
+  .input-field-box{
+    flex:1 1 160px;
+    background:var(--surface2); color:var(--text);
+    border:1px solid var(--border-strong); border-radius:8px;
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    padding:7px 10px; outline:none;
+  }
+  .input-field-box:focus{ border-color:var(--accent); }
+  .toggle-raw-row{ padding:10px 16px; border-top:1px solid var(--border); }
+  .toggle-raw-btn{
+    background:none; border:none; color:var(--accent); font-size:12px; font-weight:600;
+    cursor:pointer; padding:0; font-family:'Inter',sans-serif;
+  }
+  .toggle-raw-btn:hover{ text-decoration:underline; }
+  .raw-stdin-wrap{ display:none; }
+  .raw-stdin-wrap.show{ display:flex; }
   textarea#stdin-input{
     width:100%; min-height:64px; resize:vertical;
     background:var(--surface2); color:var(--text);
@@ -250,10 +279,17 @@ int main() {
     return 0;
 }</textarea>
     </div>
-    <div class="stdin-row">
-      <label for="stdin-input">stdin</label>
+    <div class="panel-header" style="border-top:1px solid var(--border);">
+      <span class="panel-label">Program Inputs</span>
+    </div>
+    <div class="detected-inputs" id="detectedInputs"></div>
+    <div class="toggle-raw-row">
+      <button class="toggle-raw-btn" id="toggleRawBtn" type="button">Use raw stdin box instead</button>
+    </div>
+    <div class="stdin-row raw-stdin-wrap" id="rawStdinWrap">
+      <label for="stdin-input">Raw stdin</label>
       <textarea id="stdin-input" placeholder="One value per line, in the order your program reads them (e.g. via scanf)"></textarea>
-      <span class="stdin-hint">This runs your program non-interactively — there's no live terminal, so any input your code needs must be entered here beforehand, one line per read (each scanf/gets call consumes the next line).</span>
+      <span class="stdin-hint">This runs your program non-interactively — there's no live terminal, so any input your code needs must be entered here beforehand, one line per read (each scanf/gets call consumes the next line). Use this if the fields above don't cover your program (e.g. inputs inside a loop).</span>
     </div>
   </div>
 
@@ -289,6 +325,163 @@ int main() {
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const stdinInput = document.getElementById('stdin-input');
+  const detectedInputsEl = document.getElementById('detectedInputs');
+  const toggleRawBtn = document.getElementById('toggleRawBtn');
+  const rawStdinWrap = document.getElementById('rawStdinWrap');
+
+  toggleRawBtn.addEventListener('click', () => {
+    const showing = rawStdinWrap.classList.toggle('show');
+    toggleRawBtn.textContent = showing ? 'Use detected fields instead' : 'Use raw stdin box instead';
+    detectedInputsEl.style.display = showing ? 'none' : '';
+  });
+
+  // ---- Parse scanf/gets/fgets calls out of the source, in order, and
+  // find the printf prompt (if any) that precedes each one. ----
+  function parseInputCalls(code) {
+    const printfMatches = [];
+    const printfRe = /printf\s*\(\s*"((?:[^"\\]|\\.)*)"/g;
+    let m;
+    while ((m = printfRe.exec(code))) {
+      printfMatches.push({ index: m.index, text: unescapeC(m[1]) });
+    }
+
+    function nearestPrompt(beforeIndex, afterIndex) {
+      let best = null;
+      for (const p of printfMatches) {
+        if (p.index > afterIndex && p.index < beforeIndex) best = p;
+      }
+      return best ? best.text.trim() : null;
+    }
+
+    function unescapeC(s) {
+      return s.replace(/\\n/g, ' ').replace(/\\t/g, ' ').replace(/\\"/g, '"');
+    }
+
+    function cleanVar(v) {
+      return v.replace(/&/g, '').replace(/\[[^\]]*\]/g, '').trim();
+    }
+
+    const calls = [];
+    const callRe = /\b(scanf|scanf_s|gets|fgets)\s*\(([^;]*?)\)\s*;/g;
+    let lastEnd = 0;
+    while ((m = callRe.exec(code))) {
+      const fn = m[1];
+      const argsRaw = m[2];
+      const idx = m.index;
+
+      if (fn === 'gets') {
+        const varName = cleanVar(argsRaw);
+        calls.push({
+          index: idx,
+          prompt: nearestPrompt(idx, lastEnd),
+          vars: [varName],
+          wholeLine: true
+        });
+      } else if (fn === 'fgets') {
+        const parts = argsRaw.split(',');
+        const varName = cleanVar(parts[0] || 'input');
+        calls.push({
+          index: idx,
+          prompt: nearestPrompt(idx, lastEnd),
+          vars: [varName],
+          wholeLine: true
+        });
+      } else {
+        // scanf("fmt", &a, &b, ...)
+        const fmtMatch = argsRaw.match(/"((?:[^"\\]|\\.)*)"/);
+        const fmt = fmtMatch ? fmtMatch[1] : '';
+        const specCount = (fmt.match(/%[-+ #0]*\d*(?:\.\d+)?(?:hh|h|ll|l|L)?[diouxXeEfFgGaAcsp]/g) || []).length;
+        const afterFmt = fmtMatch ? argsRaw.slice(fmtMatch.index + fmtMatch[0].length) : argsRaw;
+        const rawVars = afterFmt.split(',').map(s => s.trim()).filter(Boolean).map(cleanVar);
+        const vars = rawVars.length ? rawVars : Array.from({length: Math.max(specCount,1)}, (_,i)=>'value'+(i+1));
+        calls.push({
+          index: idx,
+          prompt: nearestPrompt(idx, lastEnd),
+          vars: vars,
+          wholeLine: false
+        });
+      }
+      lastEnd = idx;
+    }
+    return calls;
+  }
+
+  let currentCalls = [];
+
+  function renderDetectedInputs() {
+    currentCalls = parseInputCalls(codeEl.value);
+    detectedInputsEl.innerHTML = '';
+
+    if (!currentCalls.length) {
+      detectedInputsEl.classList.add('empty');
+      detectedInputsEl.innerHTML = '<span class="detected-empty-msg">No scanf / gets / fgets calls detected — this program doesn\'t need input, or uses input inside a loop (use the raw stdin box below for that).</span>';
+      return;
+    }
+    detectedInputsEl.classList.remove('empty');
+
+    currentCalls.forEach((call, ci) => {
+      call.vars.forEach((v, vi) => {
+        const row = document.createElement('div');
+        row.className = 'input-field-row';
+
+        const label = document.createElement('label');
+        label.className = 'input-field-label';
+        const promptText = call.prompt ? call.prompt : (call.wholeLine ? 'Line of text' : 'Value');
+        label.innerHTML = promptText + '<span class="var-tag">' + v + '</span>';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input-field-box';
+        input.dataset.callIndex = ci;
+        input.dataset.varIndex = vi;
+        input.placeholder = call.wholeLine ? 'Type a line of text' : 'Type a value';
+
+        row.appendChild(label);
+        row.appendChild(input);
+        detectedInputsEl.appendChild(row);
+      });
+    });
+  }
+
+  // Build the stdin blob to actually send to the compiler, from the
+  // per-field values (in source order).
+  function buildStdinFromFields() {
+    const lines = [];
+    document.querySelectorAll('.input-field-box').forEach(box => {
+      const ci = parseInt(box.dataset.callIndex, 10);
+      const call = currentCalls[ci];
+      const val = box.value;
+      if (call.wholeLine) {
+        lines.push(val);
+      } else {
+        // multiple specifiers in one scanf call share a line, space-separated
+        const existingLineIdx = box.dataset._lineIdx;
+        lines.push(val);
+      }
+    });
+    return lines.join('\n');
+  }
+
+  // After the program runs, splice the values the user typed back into
+  // the raw output right after their matching prompt text, so it reads
+  // like a real interactive session instead of a blind dump.
+  function buildTranscript(rawOutput, typedValues) {
+    let out = rawOutput;
+    let cursor = 0;
+    for (const { prompt, display } of typedValues) {
+      if (!prompt) continue;
+      const idx = out.indexOf(prompt, cursor);
+      if (idx !== -1) {
+        const insertAt = idx + prompt.length;
+        out = out.slice(0, insertAt) + display + out.slice(insertAt);
+        cursor = insertAt + display.length;
+      }
+    }
+    return out;
+  }
+
+  codeEl.addEventListener('input', () => { updateGutter(); renderDetectedInputs(); });
+  renderDetectedInputs();
 
   function updateGutter() {
     const lineCount = codeEl.value.split('\n').length;
@@ -322,6 +515,7 @@ int main() {
     statusText.textContent = 'Idle';
     codeEl.focus();
     updateGutter();
+    renderDetectedInputs();
   });
 
   async function runCode() {
@@ -339,6 +533,25 @@ int main() {
     outputEl.className = '';
     outputEl.textContent = 'Working...';
 
+    const usingRaw = rawStdinWrap.classList.contains('show');
+    let stdinToSend = '';
+    let typedValues = [];
+
+    if (usingRaw) {
+      stdinToSend = stdinInput.value || '';
+    } else {
+      stdinToSend = buildStdinFromFields();
+      // Collect prompt -> typed value pairs (in source order) for splicing
+      // into the output afterward.
+      document.querySelectorAll('.input-field-box').forEach(box => {
+        const ci = parseInt(box.dataset.callIndex, 10);
+        const call = currentCalls[ci];
+        if (call && call.prompt) {
+          typedValues.push({ prompt: call.prompt, display: box.value });
+        }
+      });
+    }
+
     try {
       const compilerId = document.getElementById('langVersion').value;
       const res = await fetch('https://wandbox.org/api/compile.json', {
@@ -347,7 +560,7 @@ int main() {
         body: JSON.stringify({
           code: source,
           compiler: compilerId,
-          stdin: stdinInput.value || '',
+          stdin: stdinToSend,
           options: 'warning,gnu17'
         })
       });
@@ -355,10 +568,15 @@ int main() {
       if (!res.ok) throw new Error('Network response was not OK (' + res.status + ')');
       const data = await res.json();
 
+      let progText = data.program_output || '';
+      if (!usingRaw && typedValues.length) {
+        progText = buildTranscript(progText, typedValues);
+      }
+
       let text = '';
       if (data.compiler_output) text += data.compiler_output;
       if (data.compiler_error) text += data.compiler_error;
-      if (data.program_output) text += data.program_output;
+      text += progText;
       if (data.program_error) text += data.program_error;
 
       const compileFailed = data.compiler_error && !data.program_output && !data.program_error && data.status !== '0';
