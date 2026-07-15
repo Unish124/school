@@ -113,12 +113,37 @@
   }
   .panel-label{ font-size:13px; font-weight:600; color:var(--text-dim); }
 
+  /* code editor with line-number gutter */
+  .editor{
+    position:relative;
+    display:flex;
+    background:var(--surface);
+  }
+  .gutter{
+    flex-shrink:0;
+    width:44px;
+    padding:16px 0;
+    text-align:right;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--text-mute);
+    background:var(--surface2);
+    border-right:1px solid var(--border);
+    overflow:hidden;
+    user-select:none;
+  }
+  .gutter div{ padding-right:10px; }
+
   textarea#code{
+    flex:1;
     width:100%; min-height:340px; resize:vertical;
     background:var(--surface); color:var(--text);
     border:none; outline:none;
     font-family:'JetBrains Mono', monospace; font-size:13.5px; line-height:1.6;
     padding:16px 18px; tab-size:4;
+    white-space:pre;
+    overflow:auto;
   }
 
   .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -147,11 +172,12 @@
   .stdin-row label{ font-size:12.5px; color:var(--text-dim); font-weight:600; }
   .stdin-hint{ font-size:11.5px; color:var(--text-mute); line-height:1.5; }
   textarea#stdin-input{
-    width:100%; min-height:56px; resize:vertical;
+    width:100%; min-height:64px; resize:vertical;
     background:var(--surface2); color:var(--text);
     border:1px solid var(--border-strong); border-radius:8px;
     font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.5;
     padding:7px 10px; outline:none;
+    white-space:pre;
   }
   textarea#stdin-input:focus{ border-color:var(--accent); }
 
@@ -186,7 +212,7 @@
 <body>
 
 <div class="topbar">
-  <a class="back-btn" href="index.html">← Back</a>
+  <a class="back-btn" href="https://college.unish.info.np/compiler.html">← Back</a>
   <span class="page-title-bar">C Compiler</span>
   <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" role="switch" aria-checked="false">
     <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -215,15 +241,19 @@
         <button class="btn btn-run" id="runBtn">▶ Run</button>
       </div>
     </div>
-    <textarea id="code" spellcheck="false">#include <stdio.h>
+    <div class="editor">
+      <div class="gutter" id="gutter"><div>1</div></div>
+      <textarea id="code" spellcheck="false">#include <stdio.h>
 
 int main() {
     printf("Hello! Made by Unish\n");
     return 0;
 }</textarea>
+    </div>
     <div class="stdin-row">
       <label for="stdin-input">stdin</label>
-      <input id="stdin-input" type="text" placeholder="Optional input passed to your program">
+      <textarea id="stdin-input" placeholder="One value per line, in the order your program reads them (e.g. via scanf)"></textarea>
+      <span class="stdin-hint">This runs your program non-interactively — there's no live terminal, so any input your code needs must be entered here beforehand, one line per read (each scanf/gets call consumes the next line).</span>
     </div>
   </div>
 
@@ -252,12 +282,26 @@ int main() {
   btn.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
 
   const codeEl = document.getElementById('code');
+  const gutterEl = document.getElementById('gutter');
   const runBtn = document.getElementById('runBtn');
   const clearBtn = document.getElementById('clearBtn');
   const outputEl = document.getElementById('output');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const stdinInput = document.getElementById('stdin-input');
+
+  function updateGutter() {
+    const lineCount = codeEl.value.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= lineCount; i++) html += '<div>' + i + '</div>';
+    gutterEl.innerHTML = html;
+    gutterEl.scrollTop = codeEl.scrollTop;
+  }
+
+  codeEl.addEventListener('input', updateGutter);
+  codeEl.addEventListener('scroll', () => { gutterEl.scrollTop = codeEl.scrollTop; });
+  window.addEventListener('resize', updateGutter);
+  updateGutter();
 
   // Tab key inserts spaces instead of moving focus
   codeEl.addEventListener('keydown', (e) => {
@@ -266,6 +310,7 @@ int main() {
       const start = codeEl.selectionStart, end = codeEl.selectionEnd;
       codeEl.value = codeEl.value.slice(0, start) + '    ' + codeEl.value.slice(end);
       codeEl.selectionStart = codeEl.selectionEnd = start + 4;
+      updateGutter();
     }
   });
 
@@ -276,6 +321,7 @@ int main() {
     statusDot.className = 'status-dot';
     statusText.textContent = 'Idle';
     codeEl.focus();
+    updateGutter();
   });
 
   async function runCode() {
