@@ -134,8 +134,38 @@
   .btn:active{ transform:scale(.97); }
   .btn-run{ background:var(--green-dim); color:var(--green); }
   .btn-clear{ background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong); }
+  .btn-fullscreen{
+    background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong);
+    padding:8px 10px;
+  }
+  .btn-fullscreen svg{ width:15px; height:15px; display:block; }
+  .btn-wrap{
+    background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong);
+    padding:8px 10px;
+  }
+  .btn-wrap svg{ width:15px; height:15px; display:block; }
+  .btn-wrap.active{ background:var(--accent-dim); color:var(--accent); border-color:transparent; }
+  textarea.code-input.wrap-on{ white-space:pre-wrap; overflow-x:hidden; word-break:break-word; }
 
-  .code-editor{ position:relative; }
+  /* code editor with line-number gutter (shared across the html/css/js tabs) */
+  .code-editor{ position:relative; display:flex; background:var(--surface); }
+  .gutter{
+    flex-shrink:0;
+    width:44px;
+    padding:16px 0;
+    text-align:right;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--text-mute);
+    background:var(--surface2);
+    border-right:1px solid var(--border);
+    overflow:hidden;
+    user-select:none;
+  }
+  .gutter div{ padding-right:10px; }
+
+  .code-stack{ flex:1; position:relative; min-width:0; }
   textarea.code-input{
     display:none;
     width:100%; min-height:300px; resize:vertical;
@@ -143,8 +173,17 @@
     border:none; outline:none;
     font-family:'JetBrains Mono', monospace; font-size:13.5px; line-height:1.6;
     padding:16px 18px; tab-size:2;
+    white-space:pre;
+    overflow:auto;
   }
   textarea.code-input.active{ display:block; }
+
+  .panel.is-fullscreen{
+    position:fixed; inset:0; z-index:1000; margin:0; border-radius:0;
+    display:flex; flex-direction:column; height:100vh;
+  }
+  .panel.is-fullscreen .code-editor{ flex:1; }
+  .panel.is-fullscreen textarea.code-input.active{ min-height:100%; height:100%; }
 
   iframe#preview{
     width:100%; height:420px; border:none; background:#fff; display:block;
@@ -177,7 +216,7 @@
     <p>Write HTML, CSS, and JavaScript with an instant live preview.</p>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="codePanel">
     <div class="panel-header">
       <div class="file-tabs">
         <button class="file-tab active" data-file="html"><span class="file-dot"></span>HTML</button>
@@ -185,15 +224,27 @@
         <button class="file-tab" data-file="js"><span class="file-dot"></span>JS</button>
       </div>
       <div class="toolbar">
+        <button class="btn btn-fullscreen" id="fullscreenBtn" type="button" aria-label="Toggle fullscreen" title="Fullscreen">
+          <svg id="fullscreenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+          </svg>
+        </button>
+        <button class="btn btn-wrap" id="wrapBtn" type="button" aria-label="Toggle word wrap" title="Word wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M3 12h13a3 3 0 0 1 0 6h-4m0 0 2-2m-2 2 2 2M3 18h4"/>
+          </svg>
+        </button>
         <button class="btn btn-clear" id="clearBtn">Clear</button>
         <button class="btn btn-run" id="runBtn">▶ Run</button>
       </div>
     </div>
     <div class="code-editor">
-      <textarea id="html-code" class="code-input active" spellcheck="false"><h1>Hello! Made by Unish</h1>
+      <div class="gutter" id="gutter"><div>1</div></div>
+      <div class="code-stack">
+        <textarea id="html-code" class="code-input active" spellcheck="false"><h1>Hello! Made by Unish</h1>
 <p>Edit the HTML, CSS, and JS tabs, then hit Run.</p>
 <p id="clock">Loading time...</p></textarea>
-      <textarea id="css-code" class="code-input" spellcheck="false">body {
+        <textarea id="css-code" class="code-input" spellcheck="false">body {
   font-family: sans-serif;
   text-align: center;
   margin-top: 60px;
@@ -208,13 +259,14 @@ h1 {
   font-weight: bold;
   color: #4FBF7A;
 }</textarea>
-      <textarea id="js-code" class="code-input" spellcheck="false">function updateClock() {
+        <textarea id="js-code" class="code-input" spellcheck="false">function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent = now.toLocaleTimeString();
 }
 
 updateClock();
 setInterval(updateClock, 1000);</textarea>
+      </div>
     </div>
   </div>
 
@@ -245,16 +297,35 @@ setInterval(updateClock, 1000);</textarea>
     css: document.getElementById('css-code'),
     js: document.getElementById('js-code')
   };
+
+  const gutterEl = document.getElementById('gutter');
+
+  function activeEditor() {
+    return Object.values(editors).find(e => e.classList.contains('active'));
+  }
+
+  function updateGutter() {
+    const ta = activeEditor();
+    if (!ta) return;
+    const lineCount = ta.value.split('\n').length;
+    let out = '';
+    for (let i = 1; i <= lineCount; i++) out += '<div>' + i + '</div>';
+    gutterEl.innerHTML = out;
+    gutterEl.scrollTop = ta.scrollTop;
+  }
+
   fileTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       fileTabs.forEach(t => t.classList.remove('active'));
       Object.values(editors).forEach(e => e.classList.remove('active'));
       tab.classList.add('active');
       editors[tab.dataset.file].classList.add('active');
+      updateGutter();
     });
   });
 
-  /* Tab key inserts spaces in whichever editor is focused */
+  /* Tab key inserts spaces in whichever editor is focused, and keep the
+     gutter (line numbers + scroll sync) up to date for each editor */
   Object.values(editors).forEach(ta => {
     ta.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') {
@@ -262,8 +333,63 @@ setInterval(updateClock, 1000);</textarea>
         const start = ta.selectionStart, end = ta.selectionEnd;
         ta.value = ta.value.slice(0, start) + '  ' + ta.value.slice(end);
         ta.selectionStart = ta.selectionEnd = start + 2;
+        updateGutter();
       }
     });
+    ta.addEventListener('input', updateGutter);
+    ta.addEventListener('scroll', () => {
+      if (ta.classList.contains('active')) gutterEl.scrollTop = ta.scrollTop;
+    });
+  });
+  window.addEventListener('resize', updateGutter);
+  updateGutter();
+
+  /* fullscreen toggle */
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const fullscreenIcon = document.getElementById('fullscreenIcon');
+  const codePanel = document.getElementById('codePanel');
+
+  const EXPAND_PATH = 'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3';
+  const COLLAPSE_PATH = 'M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3';
+
+  function setFullscreenIcon(isFull) {
+    fullscreenIcon.querySelector('path').setAttribute('d', isFull ? COLLAPSE_PATH : EXPAND_PATH);
+    fullscreenBtn.title = isFull ? 'Exit fullscreen' : 'Fullscreen';
+  }
+
+  fullscreenBtn.addEventListener('click', async () => {
+    const supportsFS = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    if (supportsFS) {
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          await (codePanel.requestFullscreen ? codePanel.requestFullscreen() : codePanel.webkitRequestFullscreen());
+        } else {
+          await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen());
+        }
+        return;
+      } catch (e) {
+        // fall through to CSS-only fallback below
+      }
+    }
+    codePanel.classList.toggle('is-fullscreen');
+    setFullscreenIcon(codePanel.classList.contains('is-fullscreen'));
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    setFullscreenIcon(!!document.fullscreenElement);
+    updateGutter();
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    setFullscreenIcon(!!document.webkitFullscreenElement);
+    updateGutter();
+  });
+
+  const wrapBtn = document.getElementById('wrapBtn');
+  wrapBtn.addEventListener('click', () => {
+    const wrapOn = !editors.html.classList.contains('wrap-on');
+    Object.values(editors).forEach(e => e.classList.toggle('wrap-on', wrapOn));
+    wrapBtn.classList.toggle('active', wrapOn);
+    updateGutter();
   });
 
   const previewEl = document.getElementById('preview');
@@ -296,6 +422,7 @@ ${editors.js.value}
     editors.css.value = '';
     editors.js.value = '';
     previewEl.srcdoc = '<p style="font-family:sans-serif;text-align:center;margin-top:60px;color:#9C9CA5;">Hello! Made by Unish</p>';
+    updateGutter();
   });
 
   runBtn.addEventListener('click', runCode);
