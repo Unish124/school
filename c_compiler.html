@@ -165,6 +165,7 @@
   .btn:hover{ opacity:.85; }
   .btn:active{ transform:scale(.97); }
   .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-run.btn-disabled-look{ opacity:.5; cursor:not-allowed; }
   .btn-run{ background:var(--green-dim); color:var(--green); }
   .btn-clear{ background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong); }
   .btn-fullscreen{
@@ -306,8 +307,7 @@ int main() {
     </div>
     <div class="stdin-row raw-stdin-wrap" id="rawStdinWrap">
       <label for="stdin-input">Raw stdin</label>
-      <textarea id="stdin-input" placeholder="One value per line, in the order your program reads them (e.g. via scanf)"></textarea>
-      <span class="stdin-hint">This runs your program non-interactively — there's no live terminal, so any input your code needs must be entered here beforehand, one line per read (each scanf/gets call consumes the next line). Use this if the fields above don't cover your program (e.g. inputs inside a loop).</span>
+      <textarea id="stdin-input" placeholder="One value per line, in the order your program reads them"></textarea>
     </div>
   </div>
 
@@ -508,12 +508,12 @@ int main() {
   function updateRunButtonState() {
     const usingRaw = rawStdinWrap.classList.contains('show');
     if (usingRaw || !currentCalls.length) {
-      runBtn.disabled = false;
+      runBtn.classList.remove('btn-disabled-look');
       runBtn.title = '';
       return;
     }
     const hasEmpty = Array.from(document.querySelectorAll('.input-field-box')).some(b => b.value.trim() === '');
-    runBtn.disabled = hasEmpty;
+    runBtn.classList.toggle('btn-disabled-look', hasEmpty);
     runBtn.title = hasEmpty ? 'Fill in all Program Inputs fields first' : '';
   }
 
@@ -607,7 +607,7 @@ int main() {
       const emptyBoxes = Array.from(document.querySelectorAll('.input-field-box')).filter(b => b.value.trim() === '');
       if (emptyBoxes.length) {
         emptyBoxes.forEach(b => b.classList.add('input-error'));
-        outputEl.textContent = 'Fill in all the Program Inputs fields above before running (' + emptyBoxes.length + ' left empty). If a field genuinely doesn\'t apply, switch to the raw stdin box instead.';
+        outputEl.textContent = '⚠ WARNING: Enter values\n\nFill in all the Program Inputs fields above before running (' + emptyBoxes.length + ' left empty). If a field genuinely doesn\'t apply, switch to the raw stdin box instead.';
         outputEl.className = 'err';
         statusDot.className = 'status-dot error';
         statusText.textContent = 'Missing input';
