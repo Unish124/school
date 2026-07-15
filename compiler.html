@@ -106,14 +106,15 @@
   .card:hover{ transform:translateY(-2px); }
   .card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .card-icon{
-    width:36px; height:36px; border-radius:9px;
-    display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700;
+    width:38px; height:38px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
   }
-  .card[data-lang="c"] .card-icon{ background:var(--amber-dim); color:var(--amber); }
+  .card-icon svg{ width:20px; height:20px; display:block; }
+  .card[data-lang="c"] .card-icon{ background:var(--amber-dim); }
   .card[data-lang="c"]:hover{ border-color:var(--amber); }
-  .card[data-lang="html"] .card-icon{ background:var(--purple-dim); color:var(--purple); }
+  .card[data-lang="html"] .card-icon{ background:var(--purple-dim); }
   .card[data-lang="html"]:hover{ border-color:var(--purple); }
-  .card[data-lang="sql"] .card-icon{ background:var(--green-dim); color:var(--green); }
+  .card[data-lang="sql"] .card-icon{ background:var(--green-dim); }
   .card[data-lang="sql"]:hover{ border-color:var(--green); }
 
   .card-title{ font-size:15.5px; font-weight:700; }
@@ -147,19 +148,44 @@
 
   <div class="cards">
     <a class="card" data-lang="c" href="c_compiler.html">
-      <div class="card-icon">C</div>
+      <div class="card-icon">
+        <!-- C logo -->
+        <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#659AD2" d="M117.5 33.5 67.1 4.6a6.4 6.4 0 0 0-6.2 0L10.5 33.5A6.4 6.4 0 0 0 7.3 39v57.8a6.4 6.4 0 0 0 3.2 5.6l50.4 28.9a6.4 6.4 0 0 0 6.2 0l50.4-28.9a6.4 6.4 0 0 0 3.2-5.6V39a6.4 6.4 0 0 0-3.2-5.5Z"/>
+          <path fill="#03599C" d="M64 63.9 10.5 33.5a6.5 6.5 0 0 0-3.2 5.5v57.8a6.4 6.4 0 0 0 3.2 5.6l50.4 28.9a6.6 6.6 0 0 0 5 .7V63.9Z"/>
+          <path fill="#fff" d="M64 24.2c11.9 0 22.4 6.2 28.3 15.7l-14.2 8.3a16.5 16.5 0 0 0-14.1-8 16.7 16.7 0 0 0 0 33.4c6 0 11.2-3.1 14.2-8l14.1 8.3a32.8 32.8 0 0 1-28.3 15.7 32.8 32.8 0 1 1 0-65.4Z"/>
+        </svg>
+      </div>
       <div class="card-title">C</div>
       <div class="card-desc">Write, compile, and run C programs with real GCC/Clang output.</div>
       <div class="card-link">Open →</div>
     </a>
     <a class="card" data-lang="html" href="html_compiler.html">
-      <div class="card-icon">&lt;/&gt;</div>
+      <div class="card-icon">
+        <!-- HTML5 logo -->
+        <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#E44D26" d="M19.4 116 9.5 4.6h109l-9.9 111.3L63.9 128z"/>
+          <path fill="#F16529" d="M64 118.8 99.9 109l8.5-95H64z"/>
+          <path fill="#EBEBEB" d="M64 52.4H46.1L44.9 39H64V25.7H30.4l.3 3.6L34 66.3h30z"/>
+          <path fill="#fff" d="M64 84.6 49.7 80.8l-.9-10.4h-13.4l1.8 20.4L64 97.7z"/>
+          <path fill="#EBEBEB" d="M63.9 52.4v13.9h16.7l-1.6 17.7L63.9 88v14.4l27.3-7.6.2-2.3 3.1-35.2.3-3.6H63.9z"/>
+          <path fill="#fff" d="M63.9 25.7v13.4h32.4l.3-3.1.6-6.7.3-3.6z"/>
+        </svg>
+      </div>
       <div class="card-title">HTML</div>
       <div class="card-desc">Write HTML, CSS, and JS with an instant live preview.</div>
       <div class="card-link">Open →</div>
     </a>
     <a class="card" data-lang="sql" href="sql_compiler.html">
-      <div class="card-icon">DB</div>
+      <div class="card-icon">
+        <!-- SQL / database logo -->
+        <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="64" cy="26" rx="50" ry="20" fill="#4FBF7A"/>
+          <path fill="#3C9A63" d="M14 26v25c0 11 22.4 20 50 20s50-9 50-20V26c0 11-22.4 20-50 20S14 37 14 26Z"/>
+          <path fill="#4FBF7A" opacity=".85" d="M14 51v25c0 11 22.4 20 50 20s50-9 50-20V51c0 11-22.4 20-50 20S14 62 14 51Z"/>
+          <path fill="#3C9A63" d="M14 76v26c0 11 22.4 20 50 20s50-9 50-20V76c0 11-22.4 20-50 20S14 87 14 76Z"/>
+        </svg>
+      </div>
       <div class="card-title">SQL</div>
       <div class="card-desc">Run SQL queries against a sample database, right in your browser.</div>
       <div class="card-link">Open →</div>
