@@ -192,6 +192,7 @@
     padding:7px 10px; outline:none;
   }
   .input-field-box:focus{ border-color:var(--accent); }
+  .input-field-box.input-error{ border-color:var(--red); background:var(--red-dim); }
   .toggle-raw-row{ padding:10px 16px; border-top:1px solid var(--border); }
   .toggle-raw-btn{
     background:none; border:none; color:var(--accent); font-size:12px; font-weight:600;
@@ -435,6 +436,9 @@ int main() {
         input.dataset.callIndex = ci;
         input.dataset.varIndex = vi;
         input.placeholder = call.wholeLine ? 'Type a line of text' : 'Type a value';
+        input.addEventListener('input', () => {
+          if (input.value.trim() !== '') input.classList.remove('input-error');
+        });
 
         row.appendChild(label);
         row.appendChild(input);
@@ -526,6 +530,25 @@ int main() {
       return;
     }
 
+    const usingRaw = rawStdinWrap.classList.contains('show');
+
+    // Block the run if there are detected fields and any are empty.
+    if (!usingRaw && currentCalls.length) {
+      const emptyBoxes = Array.from(document.querySelectorAll('.input-field-box')).filter(b => b.value.trim() === '');
+      if (emptyBoxes.length) {
+        emptyBoxes.forEach(b => b.classList.add('input-error'));
+        outputEl.textContent = 'Fill in all the Program Inputs fields above before running (' + emptyBoxes.length + ' left empty). If a field genuinely doesn\'t apply, switch to the raw stdin box instead.';
+        outputEl.className = 'err';
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'Missing input';
+        emptyBoxes[0].focus();
+        emptyBoxes[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
+    document.querySelectorAll('.input-field-box').forEach(b => b.classList.remove('input-error'));
+
     runBtn.disabled = true;
     runBtn.textContent = '⏳ Running...';
     statusDot.className = 'status-dot running';
@@ -533,7 +556,6 @@ int main() {
     outputEl.className = '';
     outputEl.textContent = 'Working...';
 
-    const usingRaw = rawStdinWrap.classList.contains('show');
     let stdinToSend = '';
     let typedValues = [];
 
