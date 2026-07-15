@@ -156,6 +156,13 @@
     padding:8px 10px;
   }
   .btn-fullscreen svg{ width:15px; height:15px; display:block; }
+  .btn-wrap{
+    background:var(--surface2); color:var(--text-dim); border:1px solid var(--border-strong);
+    padding:8px 10px;
+  }
+  .btn-wrap svg{ width:15px; height:15px; display:block; }
+  .btn-wrap.active{ background:var(--accent-dim); color:var(--accent); border-color:transparent; }
+  textarea#code.wrap-on{ white-space:pre-wrap; overflow-x:hidden; word-break:break-word; }
 
   .panel.is-fullscreen{
     position:fixed; inset:0; z-index:1000; margin:0; border-radius:0;
@@ -228,6 +235,11 @@
         <button class="btn btn-fullscreen" id="fullscreenBtn" type="button" aria-label="Toggle fullscreen" title="Fullscreen">
           <svg id="fullscreenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+          </svg>
+        </button>
+        <button class="btn btn-wrap" id="wrapBtn" type="button" aria-label="Toggle word wrap" title="Word wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M3 12h13a3 3 0 0 1 0 6h-4m0 0 2-2m-2 2 2 2M3 18h4"/>
           </svg>
         </button>
         <button class="btn btn-clear" id="resetBtn">Reset DB</button>
@@ -351,6 +363,13 @@ SELECT * FROM students;</textarea>
   });
   document.addEventListener('webkitfullscreenchange', () => {
     setFullscreenIcon(!!document.webkitFullscreenElement);
+    updateGutter();
+  });
+
+  const wrapBtn = document.getElementById('wrapBtn');
+  wrapBtn.addEventListener('click', () => {
+    codeEl.classList.toggle('wrap-on');
+    wrapBtn.classList.toggle('active', codeEl.classList.contains('wrap-on'));
     updateGutter();
   });
 
