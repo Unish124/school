@@ -154,6 +154,9 @@
   .sql-result-block{ margin-bottom:14px; overflow-x:auto; }
   .sql-result-block:last-child{ margin-bottom:0; }
   .sql-result-caption{ font-size:12px; color:var(--text-mute); padding:10px 16px 4px; }
+  #schema{ padding-bottom:4px; overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .schema-empty{ padding:16px 18px; font-size:13px; color:var(--text-mute); }
+  @media (prefers-reduced-motion: reduce){ #schema{ transition:none; } }
 
   @media (max-width:560px){
     .page-title-bar{ display:none; }
@@ -189,8 +192,25 @@
         <button class="btn btn-run" id="runBtn">▶ Run</button>
       </div>
     </div>
-    <p class="sql-hint">A sample "students" table is preloaded — try SELECT, INSERT, UPDATE, or DELETE.</p>
-    <textarea id="code" spellcheck="false">SELECT * FROM students WHERE marks >= 80 ORDER BY marks DESC;</textarea>
+    <textarea id="code" spellcheck="false">CREATE DATABASE school;
+
+CREATE TABLE students (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  marks INTEGER NOT NULL
+);
+
+INSERT INTO students (name, marks) VALUES ('Aarav', 88);
+
+SELECT * FROM students;</textarea>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-label">Schema</span>
+      <button class="btn btn-clear" id="schemaToggleBtn">Expand ▾</button>
+    </div>
+    <div id="schema"><pre class="output">No tables yet — create one to see it listed here.</pre></div>
   </div>
 
   <div class="panel">
@@ -220,6 +240,17 @@
 
   const codeEl = document.getElementById('code');
   const outputEl = document.getElementById('output');
+  const schemaEl = document.getElementById('schema');
+  const schemaToggleBtn = document.getElementById('schemaToggleBtn');
+  let schemaExpanded = false;
+
+  function setSchemaExpanded(expanded) {
+    schemaExpanded = expanded;
+    schemaEl.style.maxHeight = expanded ? schemaEl.scrollHeight + 'px' : '0px';
+    schemaToggleBtn.textContent = expanded ? 'Collapse ▴' : 'Expand ▾';
+  }
+
+  schemaToggleBtn.addEventListener('click', () => setSchemaExpanded(!schemaExpanded));
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const runBtn = document.getElementById('runBtn');
@@ -237,24 +268,62 @@
   let SQL = null;
   let db = null;
 
-  const SEED_SQL = `
-    CREATE TABLE students (
-      id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL,
-      subject TEXT NOT NULL,
-      marks INTEGER NOT NULL
-    );
-    INSERT INTO students (name, subject, marks) VALUES
-      ('Aarav', 'Computer Science', 88),
-      ('Bina', 'Physics', 76),
-      ('Chetan', 'Computer Science', 92),
-      ('Diya', 'Chemistry', 65),
-      ('Esha', 'Physics', 81);
-  `;
+  const SEED_SQL = ``;
 
   function resetDb() {
     db = new SQL.Database();
-    db.run(SEED_SQL);
+    if (SEED_SQL.trim()) db.run(SEED_SQL);
+  }
+
+  // SQLite has no CREATE DATABASE / USE — treat them as harmless no-ops
+  // so code written for MySQL-style dialects still runs without editing.
+  function stripDatabaseStatements(sql) {
+    return sql
+      .replace(/CREATE\s+DATABASE\s+[^;]+;?/gi, '')
+      .replace(/DROP\s+DATABASE\s+[^;]+;?/gi, '')
+      .replace(/USE\s+[^;]+;?/gi, '');
+  }
+
+  // Translate common MySQL-style commands to their SQLite equivalents.
+  function translateAliases(sql) {
+    return sql
+      .replace(/\bSHOW\s+TABLES\s*;/gi, "SELECT name AS table_name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+      .replace(/\b(?:DESCRIBE|DESC)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/gi, 'PRAGMA table_info($1);');
+  }
+
+  function getTableNames() {
+    try {
+      const res = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
+      if (!res || res.length === 0) return [];
+      return res[0].values.map(row => row[0]);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function refreshSchema() {
+    if (!db) return;
+    const tables = getTableNames();
+    if (tables.length === 0) {
+      schemaEl.innerHTML = '<div class="schema-empty">No tables yet — create one to see it listed here.</div>';
+    } else {
+      let out = '';
+      tables.forEach(name => {
+        const info = db.exec(`PRAGMA table_info(${name});`);
+        const cols = info && info[0] ? info[0].values : [];
+        out += '<div class="sql-result-block">';
+        out += `<div class="sql-result-caption">${name} — ${cols.length} column(s)</div>`;
+        out += '<table class="sql-result-table"><thead><tr><th>Column</th><th>Type</th><th>Not Null</th><th>Primary Key</th></tr></thead><tbody>';
+        cols.forEach(c => {
+          // pragma table_info columns: cid, name, type, notnull, dflt_value, pk
+          out += `<tr><td>${c[1]}</td><td>${c[2] || '—'}</td><td>${c[3] ? 'Yes' : 'No'}</td><td>${c[5] ? 'Yes' : 'No'}</td></tr>`;
+        });
+        out += '</tbody></table></div>';
+      });
+      schemaEl.innerHTML = out;
+    }
+    // keep the expanded height accurate if the panel is currently open
+    if (schemaExpanded) schemaEl.style.maxHeight = schemaEl.scrollHeight + 'px';
   }
 
   async function initSql() {
@@ -266,6 +335,7 @@
       statusDot.className = 'status-dot success';
       statusText.textContent = 'Ready';
       outputEl.innerHTML = '<pre class="output">Hello! Made by Unish</pre>';
+      refreshSchema();
     } catch (err) {
       statusDot.className = 'status-dot error';
       statusText.textContent = 'Failed to load';
@@ -301,14 +371,22 @@
       outputEl.innerHTML = '<pre class="output err">SQL engine is still loading, try again in a second.</pre>';
       return;
     }
-    const query = codeEl.value.trim();
-    if (!query) {
+    const rawQuery = codeEl.value.trim();
+    if (!rawQuery) {
       outputEl.innerHTML = '<pre class="output err">Write a SQL query first.</pre>';
+      return;
+    }
+    const query = translateAliases(stripDatabaseStatements(rawQuery)).trim();
+    if (!query) {
+      outputEl.innerHTML = '<pre class="output ok">Statement executed. (SQLite doesn\'t need CREATE DATABASE or USE — they were safely skipped. Add a CREATE TABLE statement to continue.)</pre>';
+      statusDot.className = 'status-dot success';
+      statusText.textContent = 'Success';
       return;
     }
     try {
       const results = db.exec(query);
       renderResults(results);
+      refreshSchema();
       statusDot.className = 'status-dot success';
       statusText.textContent = 'Success';
     } catch (err) {
@@ -325,6 +403,7 @@
       outputEl.innerHTML = '<pre class="output">Hello! Made by Unish</pre>';
       statusDot.className = 'status-dot';
       statusText.textContent = 'Idle';
+      refreshSchema();
     }
   });
 
