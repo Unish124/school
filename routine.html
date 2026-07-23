@@ -1120,7 +1120,7 @@
   // copy until they manually clear their browser data.
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/routine-sw.js", { scope: "/routine.html" })
+      navigator.serviceWorker.register("/routine-sw.js", { scope: "/routine.html", updateViaCache: "none" })
         .then((reg) => {
           // Check the server for a newer service-worker file right away,
           // and again periodically while the page stays open.
