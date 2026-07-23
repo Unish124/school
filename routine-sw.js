@@ -1,6 +1,6 @@
 // Bump this version number any time you edit routine.html / routine-manifest.json
 // so the service worker knows to refresh the cache.
-const CACHE_NAME = "routine-12c-v2";
+const CACHE_NAME = "routine-12c-v3";
 
 // Files that should always be re-checked against the network first
 // (the content that actually changes when you update the routine).
@@ -77,7 +77,7 @@ self.addEventListener("fetch", (event) => {
 
   if (isNavigation || isNetworkFirst(req.url)) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-store" }) // bypass the browser's HTTP cache, not just our own Cache Storage
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
