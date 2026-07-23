@@ -56,7 +56,13 @@ self.addEventListener("message", (event) => {
 });
 
 function isNetworkFirst(url) {
-  return NETWORK_FIRST_ASSETS.some((path) => url.endsWith(path));
+  let pathname;
+  try {
+    pathname = new URL(url).pathname;
+  } catch (e) {
+    pathname = url;
+  }
+  return NETWORK_FIRST_ASSETS.some((path) => pathname.endsWith(path));
 }
 
 // Fetch:
