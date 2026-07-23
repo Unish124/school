@@ -1110,13 +1110,56 @@
 
   setMode("day");
 
-  // ---------- PWA: register service worker for full offline support ----------
+  // ---------- PWA: register service worker + auto-update handling ----------
   // Scoped to just this page ("/routine.html") so it never intercepts
   // requests for index.html, notes.html, or books.html on this site.
+  //
+  // IMPORTANT: this logic makes sure that when you update the routine and
+  // re-upload routine.html + routine-sw.js, visitors get the new version
+  // automatically within seconds — instead of being stuck on an old cached
+  // copy until they manually clear their browser data.
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/routine-sw.js", { scope: "/routine.html" }).catch((err) => {
-        console.warn("Service worker registration failed:", err);
+      navigator.serviceWorker.register("/routine-sw.js", { scope: "/routine.html" })
+        .then((reg) => {
+          // Check the server for a newer service-worker file right away,
+          // and again periodically while the page stays open.
+          reg.update().catch(() => {});
+          setInterval(() => reg.update().catch(() => {}), 60 * 1000); // every 60s
+
+          function activateAndReload(worker) {
+            // Ask the waiting worker to take over immediately.
+            worker.postMessage({ type: "SKIP_WAITING" });
+          }
+
+          // A new worker was found and finished installing while an old
+          // one is still controlling the page — activate it right away.
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                activateAndReload(newWorker);
+              }
+            });
+          });
+
+          // If a worker is already sitting there "waiting" (e.g. this tab
+          // was open when the update was found), activate it too.
+          if (reg.waiting) activateAndReload(reg.waiting);
+        })
+        .catch((err) => {
+          console.warn("Service worker registration failed:", err);
+        });
+
+      // Once the new worker takes control, reload once so the page and
+      // all its assets are re-fetched fresh — this is the moment the
+      // visitor actually sees the updated routine.
+      let hasReloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hasReloaded) return;
+        hasReloaded = true;
+        window.location.reload();
       });
     });
   }
