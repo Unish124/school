@@ -91,6 +91,111 @@
   }
   .back-btn:active{ transform:translateX(-2px) scale(0.97); }
 
+  /* ---------------- HAMBURGER MENU ---------------- */
+  .top-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .top-bar .back-btn{ margin-bottom:0; }
+
+  .menu-wrap{ position:relative; }
+  .hamburger-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    color:var(--ink);
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .hamburger-btn:hover{ border-color:var(--rule-strong); }
+  .hamburger-btn:active{ transform:scale(0.95); }
+  .hamburger-btn svg{ display:block; }
+
+  .dropdown-menu{
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    min-width:220px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:6px;
+    z-index:50;
+    opacity:0;
+    transform:translateY(-6px) scale(0.98);
+    pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .dropdown-menu.open{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    pointer-events:auto;
+  }
+
+  .menu-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    text-align:left;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    background:transparent;
+    border:none;
+    border-radius:8px;
+    padding:10px 12px;
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  .menu-item:hover{ background:var(--paper-deep); }
+  .menu-item svg{ flex-shrink:0; color:var(--green); transition:transform .5s ease; }
+  .menu-item.is-refreshing svg{ animation:spin 0.9s linear infinite; }
+  .menu-item .menu-item-sub{
+    display:block;
+    font-weight:400;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .menu-item-text{ display:flex; flex-direction:column; min-width:0; }
+
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .refresh-toast{
+    position:fixed;
+    left:50%;
+    bottom:26px;
+    transform:translate(-50%, 12px);
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:100px;
+    box-shadow:0 10px 28px -8px rgba(35,32,26,0.5);
+    z-index:60;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .refresh-toast.show{
+    opacity:1;
+    transform:translate(-50%, 0);
+  }
+
   header{
     text-align:center;
     padding:6px 0 26px;
@@ -674,10 +779,27 @@
 <body class="list-mode">
 <div class="wrap">
 
-  <a class="back-btn" href="https://college.unish.info.np/" aria-label="Back to college home">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-    Back
-  </a>
+  <div class="top-bar">
+    <a class="back-btn" href="https://college.unish.info.np/" aria-label="Back to college home">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back
+    </a>
+
+    <div class="menu-wrap">
+      <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+      </button>
+      <div class="dropdown-menu" id="dropdownMenu">
+        <button class="menu-item" id="forceRefreshBtn" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+          <span class="menu-item-text">
+            Refresh from server
+            <span class="menu-item-sub">Fetch the latest routine now</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <header>
     <p class="school-name">Daily Routine of Class XII (Science) — Change Date: 2083/03/15</p>
@@ -757,6 +879,8 @@
 <button class="floating-install-btn" id="floatingInstallBtn" type="button" title="Save for offline use" aria-label="Save for offline use">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
 </button>
+
+<div class="refresh-toast" id="refreshToast">Checking for the latest routine…</div>
 
 <script>
   const TIMES = [
@@ -1109,6 +1233,68 @@
   teacherViewBtn.addEventListener("click", () => setMode("teacher"));
 
   setMode("day");
+
+  // ---------- HAMBURGER MENU ----------
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const dropdownMenu = document.getElementById("dropdownMenu");
+  const forceRefreshBtn = document.getElementById("forceRefreshBtn");
+  const refreshToast = document.getElementById("refreshToast");
+
+  function closeMenu() {
+    dropdownMenu.classList.remove("open");
+    hamburgerBtn.setAttribute("aria-expanded", "false");
+  }
+  function toggleMenu() {
+    const isOpen = dropdownMenu.classList.toggle("open");
+    hamburgerBtn.setAttribute("aria-expanded", String(isOpen));
+  }
+
+  hamburgerBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+  document.addEventListener("click", (e) => {
+    if (!dropdownMenu.contains(e.target) && e.target !== hamburgerBtn) closeMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+  });
+
+  let toastTimer = null;
+  function showToast(text) {
+    refreshToast.textContent = text;
+    refreshToast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => refreshToast.classList.remove("show"), 2600);
+  }
+
+  // "Refresh from server": actually asks the network for the latest
+  // routine.html right now (bypassing any cache) instead of just
+  // re-showing whatever is already saved locally.
+  forceRefreshBtn.addEventListener("click", async () => {
+    closeMenu();
+    forceRefreshBtn.classList.add("is-refreshing");
+    showToast("Checking for the latest routine…");
+
+    try {
+      // 1. Tell the service worker (if any) to check for a newer version
+      //    of itself right away.
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration("/routine.html");
+        if (reg) await reg.update().catch(() => {});
+      }
+      // 2. Directly ask the server for a fresh copy, completely bypassing
+      //    the HTTP cache, so we know right now whether anything changed.
+      const freshUrl = window.location.pathname + "?refresh=" + Date.now();
+      await fetch(freshUrl, { cache: "no-store" });
+    } catch (err) {
+      console.warn("Refresh check failed, reloading anyway:", err);
+    } finally {
+      // 3. Reload the page using that same cache-busted URL so the browser
+      //    is forced to render the fresh copy rather than a saved one.
+      window.location.href = window.location.pathname + "?refresh=" + Date.now();
+    }
+  });
 
   // ---------- PWA: register service worker + auto-update handling ----------
   // Scoped to just this page ("/routine.html") so it never intercepts
