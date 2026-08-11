@@ -330,7 +330,7 @@
   .qr-box{
     width:200px;
     height:200px;
-    margin:0 auto 16px;
+    margin:0 auto 12px;
     border:1px solid var(--rule);
     border-radius:14px;
     background:#fff;
@@ -345,6 +345,29 @@
     font-size:11px;
     color:var(--ink-soft);
   }
+
+  .download-qr-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    color:var(--green);
+    background:var(--green-soft);
+    border:1px solid rgba(47,111,78,0.3);
+    border-radius:10px;
+    padding:9px 12px;
+    margin-bottom:14px;
+    cursor:pointer;
+    transition:background .12s ease, transform .12s ease;
+  }
+  .download-qr-btn:hover{ background:#dcecdf; }
+  .download-qr-btn:active{ transform:scale(0.98); }
+  .download-qr-btn.is-saving svg{ animation:spin 0.9s linear infinite; }
+  .download-qr-btn[disabled]{ opacity:0.6; cursor:default; }
 
   .share-url-row{
     display:flex;
@@ -1137,6 +1160,10 @@
     <h3>Share this routine</h3>
     <p class="share-sub">Scan the code to open it on another phone</p>
     <div class="qr-box" id="qrBox"><span class="qr-loading">Loading QR…</span></div>
+    <button class="download-qr-btn" id="downloadQrBtn" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+      Download QR code
+    </button>
     <div class="share-url-row">
       <span id="shareUrlText">college.unish.info.np/routine.html</span>
       <button class="copy-link-btn" id="copyLinkBtn" type="button">Copy</button>
@@ -1534,13 +1561,17 @@
   const shareNativeBtn = document.getElementById("shareNativeBtn");
   const copyLinkBtn = document.getElementById("copyLinkBtn");
   const qrBox = document.getElementById("qrBox");
+  const downloadQrBtn = document.getElementById("downloadQrBtn");
   let qrLoaded = false;
+
+  function qrImageUrl(size) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(SHARE_URL)}`;
+  }
 
   function loadQrCode() {
     if (qrLoaded) return;
     qrLoaded = true;
-    const size = 200;
-    const src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(SHARE_URL)}`;
+    const src = qrImageUrl(200);
     const img = new Image();
     img.alt = "QR code that opens the class routine";
     img.onload = () => {
@@ -1553,6 +1584,35 @@
     };
     img.src = src;
   }
+
+  // Downloads the QR as an actual PNG file (higher-res than the on-screen
+  // preview). Tries a proper file download first; if the QR service
+  // doesn't allow cross-origin blob access, falls back to opening the
+  // image in a new tab so the person can long-press/right-click to save it.
+  downloadQrBtn.addEventListener("click", async () => {
+    downloadQrBtn.classList.add("is-saving");
+    downloadQrBtn.disabled = true;
+    const hqUrl = qrImageUrl(600);
+    try {
+      const res = await fetch(hqUrl, { mode: "cors" });
+      if (!res.ok) throw new Error("QR fetch failed");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = "class-12c-routine-qr.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+    } catch (err) {
+      // Fallback: open the QR image directly so the person can save it manually
+      window.open(hqUrl, "_blank");
+    } finally {
+      downloadQrBtn.classList.remove("is-saving");
+      downloadQrBtn.disabled = false;
+    }
+  });
 
   function openShareModal() {
     closeMenu();
