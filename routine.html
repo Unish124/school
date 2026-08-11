@@ -98,8 +98,81 @@
     justify-content:space-between;
     gap:10px;
     margin-bottom:16px;
+    position:relative;
   }
   .top-bar .back-btn{ margin-bottom:0; }
+
+  .made-by-badge{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%, -50%);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    text-decoration:none;
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:0.01em;
+    color:#fff;
+    background:linear-gradient(120deg, var(--green), #3f8f68, var(--green));
+    background-size:220% 220%;
+    padding:8px 16px 8px 12px;
+    border-radius:100px;
+    box-shadow:0 6px 16px -6px rgba(47,111,78,0.55), 0 1px 0 rgba(255,255,255,0.15) inset;
+    animation:badgeShimmer 4.5s ease-in-out infinite;
+    white-space:nowrap;
+    overflow:hidden;
+    isolation:isolate;
+  }
+  .made-by-badge::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:45%;
+    height:100%;
+    background:linear-gradient(115deg, transparent 10%, rgba(255,255,255,0.75) 50%, transparent 90%);
+    transform:translateX(-220%) skewX(-20deg);
+    animation:badgeShine 2.4s cubic-bezier(0.22, 0.6, 0.32, 1) infinite;
+    pointer-events:none;
+  }
+  .made-by-badge .spark{
+    display:inline-flex;
+    animation:sparkPulse 1.8s ease-in-out infinite;
+  }
+  .made-by-badge:hover{
+    transform:translate(-50%, -50%) scale(1.06);
+    box-shadow:0 10px 22px -6px rgba(47,111,78,0.65), 0 1px 0 rgba(255,255,255,0.2) inset;
+  }
+  .made-by-badge:active{ transform:translate(-50%, -50%) scale(0.97); }
+  .made-by-badge .mb-label{ opacity:0.85; font-weight:500; }
+  .made-by-badge .mb-name{ font-weight:800; }
+
+  @keyframes badgeShimmer{
+    0%, 100%{ background-position:0% 50%; }
+    50%{ background-position:100% 50%; }
+  }
+  @keyframes badgeShine{
+    0%{ transform:translateX(-220%) skewX(-20deg); }
+    65%{ transform:translateX(280%) skewX(-20deg); }
+    100%{ transform:translateX(280%) skewX(-20deg); }
+  }
+  @keyframes sparkPulse{
+    0%, 100%{ transform:scale(1) rotate(0deg); opacity:1; }
+    50%{ transform:scale(1.2) rotate(-8deg); opacity:0.85; }
+  }
+
+  @media (max-width:560px){
+    .made-by-badge{
+      font-size:11px;
+      padding:7px 13px 7px 10px;
+    }
+  }
+  @media (max-width:420px){
+    .made-by-badge .mb-label{ display:none; }
+  }
 
   .menu-wrap{ position:relative; }
   .hamburger-btn{
@@ -908,6 +981,14 @@
     <a class="back-btn" href="https://college.unish.info.np/" aria-label="Back to college home">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
       Back
+    </a>
+
+    <a class="made-by-badge" href="https://unishbaskota.com.np" target="_blank" rel="noopener" aria-label="Made by Unish — visit unishbaskota.com.np">
+      <span class="spark">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>
+      </span>
+      <span class="mb-label">Made by</span>
+      <span class="mb-name">Unish</span>
     </a>
 
     <div class="menu-wrap">
