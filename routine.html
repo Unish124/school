@@ -91,6 +91,14 @@
   }
   .back-btn:active{ transform:translateX(-2px) scale(0.97); }
 
+  @media (max-width:400px){
+    .back-btn{
+      font-size:12px;
+      padding:7px 11px 7px 9px;
+      gap:5px;
+    }
+  }
+
   /* ---------------- HAMBURGER MENU ---------------- */
   .top-bar{
     display:flex;
@@ -167,10 +175,18 @@
   @media (max-width:560px){
     .made-by-badge{
       font-size:11px;
-      padding:7px 13px 7px 10px;
+      padding:7px 12px 7px 9px;
+      gap:5px;
     }
   }
-  @media (max-width:420px){
+  @media (max-width:400px){
+    .made-by-badge{
+      font-size:10px;
+      padding:6px 10px 6px 8px;
+      gap:4px;
+    }
+  }
+  @media (max-width:340px){
     .made-by-badge .mb-label{ display:none; }
   }
 
