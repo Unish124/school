@@ -1081,7 +1081,7 @@
       Share this website
     </button>
     <h1>Class 12 <em>'C'</em> Routine</h1>
-    <span class="effective-badge">Effective from 6 Shrawan, 2083</span>
+    <span class="effective-badge">Effective from 2 Bhadra, 2083</span>
   </header>
 
   <div class="install-banner" id="installBanner">
@@ -1206,27 +1206,27 @@
       { subject: "ENG", teacher: "RPD", type: "class" },
       { subject: "PHY", teacher: "SK", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
-      { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "CHE", teacher: "AT", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "PHY", teacher: "TNK", type: "class" },
-      null,
+      { subject: "CHE", teacher: "BN", type: "class" },
       null,
     ],
     Tuesday: [
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "PHY", teacher: "DA", type: "class" },
-      { subject: "COM", teacher: "CNS", type: "class" },
-      { subject: "CHE", teacher: "MANJU", type: "class" },
+      { subject: "CHE", teacher: "New", type: "class" },
       { subject: "NEP", teacher: "LILA", type: "class" },
+      { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "ENG", teacher: "JS", type: "class" },
-      null,
+      { subject: "CHE", teacher: "AT", type: "class" },
       null,
     ],
     Wednesday: [
       { subject: "CHE", teacher: "BN", type: "class" },
       { subject: "NEP", teacher: "LILA", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
-      { subject: "CHE", teacher: "MANJU", type: "class" },
+      null,
       { subject: "COM", teacher: "MANISH", type: "class" },
       { subject: "ENG", teacher: "JS", type: "class" },
       { subject: "PHY", teacher: "TNK", type: "class" },
@@ -1236,20 +1236,20 @@
       { subject: "NEP", teacher: "YD", type: "class" },
       { subject: "MATH", teacher: "SL", type: "class" },
       { subject: "PHY", teacher: "TNK", type: "class" },
-      { subject: "CHE", teacher: "AT", type: "class" },
+      { subject: "CHE", teacher: "New", type: "class" },
       { subject: "COM", teacher: "MANISH", type: "class" },
-      { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
-      { subject: "PHY-CHE Practical", teacher: "DA, MANJU", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "DA, BN", type: "practical" },
+      { subject: "PHY-CHE Practical", teacher: "DA, BN", type: "practical" },
       null,
     ],
     Friday: [
       { subject: "PHY-CHE Practical", teacher: "SK, BN", type: "practical" },
       { subject: "PHY-CHE Practical", teacher: "SK, BN", type: "practical" },
       { subject: "MATH", teacher: "SL", type: "class" },
+      null,
       { subject: "COM", teacher: "MANISH", type: "class" },
-      { subject: "PHY", teacher: "DA", type: "class" },
       { subject: "ENG", teacher: "PP", type: "class" },
-      { subject: "CHE", teacher: "BN", type: "class" },
+      { subject: "PHY", teacher: "DA", type: "class" },
       null,
     ],
   };
@@ -1300,7 +1300,7 @@
       if (p === null) {
         html += `<div class="${rowClasses}">
           <div class="p-num"><span class="ord">${ordLabel}</span><span class="lbl">Period</span></div>
-          <div class="p-main"><div class="p-subject">Off <span class="tag off">Holiday</span></div><div class="p-teacher">No class scheduled</div></div>
+          <div class="p-main"><div class="p-subject">Off</div><div class="p-teacher">No class scheduled</div></div>
           <div class="p-time">${start} – ${end}</div>
         </div>`;
       } else {
